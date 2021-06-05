@@ -25,11 +25,16 @@ x64/
 x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
+build/
 bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -348,3 +353,15 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Visual Studio Code
+.vscode
+
+# Rider
+.idea
+
+# Windows specific files
+*.swp
+
+# OSX specific files
+.DS_Store
