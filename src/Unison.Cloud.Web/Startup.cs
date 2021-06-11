@@ -32,6 +32,7 @@ namespace Unison.Cloud.Web
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Unison.Cloud.Web", Version = "v1" });
             });
+            services.AddConfigurations(Configuration);
             services.AddDbContext();
             services.AddAmqpContext();
             services.AddCoreServices();

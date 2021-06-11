@@ -1,0 +1,31 @@
+﻿using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Unison.Cloud.Core.Interfaces.Amqp;
+using Unison.Cloud.Core.Interfaces.Workers;
+using Unison.Cloud.Core.Models;
+
+namespace Unison.Cloud.Core.Workers
+{
+    public class SyncRequestWorker : ITimedWorker
+    {
+        private readonly ILogger<SyncRequestWorker> _logger;
+        private readonly IAmqpPublisher _amqpPublisher;
+
+        public SyncRequestWorker(ILogger<SyncRequestWorker> logger, IAmqpPublisher amqpPublisher)
+        {
+            _logger = logger;
+            _amqpPublisher = amqpPublisher;
+        }
+
+        public void Execute(object state)
+        {
+            _logger.LogInformation("Sending query...");
+            var message = new AmqpMessage { Query = "SELECT * FROM Products" };
+            _amqpPublisher.Publish(message);
+        }
+    }
+}

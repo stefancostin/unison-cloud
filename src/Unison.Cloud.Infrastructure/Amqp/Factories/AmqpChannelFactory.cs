@@ -4,9 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Services.Amqp;
+using Unison.Cloud.Infrastructure.Amqp.Interfaces;
+using Unison.Cloud.Infrastructure.Amqp.Models;
 
-namespace Unison.Cloud.Infrastructure.Amqp
+namespace Unison.Cloud.Infrastructure.Amqp.Factories
 {
     public class AmqpChannelFactory : IAmqpChannelFactory
     {

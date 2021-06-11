@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Interfaces.Workers;
 
 namespace Unison.Cloud.Core.Services
 {
@@ -27,8 +28,8 @@ namespace Unison.Cloud.Core.Services
         {
             using (var scope = Services.CreateScope())
             {
-                var job = scope.ServiceProvider.GetRequiredService<ISync>();
-                _timer = new Timer(job.Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+                var syncRequestWorker = scope.ServiceProvider.GetRequiredService<ITimedWorker>();
+                _timer = new Timer(syncRequestWorker.Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
             }
             return Task.CompletedTask;
         }

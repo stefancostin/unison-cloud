@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Services.Amqp;
+using Unison.Cloud.Core.Interfaces.Amqp;
 using Unison.Cloud.Infrastructure.Amqp;
 using Unison.Cloud.Infrastructure.Data.Entities;
 using Unison.Cloud.Infrastructure.Data.Repositories;
@@ -17,13 +17,13 @@ namespace Unison.Cloud.Web.Controllers
     [ApiController]
     public class PublishController : ControllerBase
     {
-        private readonly IAmqpClient _amqpClient;
+        private readonly IAmqpPublisher _amqpPublisher;
         private readonly IProductRepository _productRepository;
         private readonly ILogger<PublishController> _logger;
 
-        public PublishController(ILogger<PublishController> logger, IAmqpClient amqpClient, IProductRepository productRepository)
+        public PublishController(ILogger<PublishController> logger, IAmqpPublisher amqpClient, IProductRepository productRepository)
         {
-            _amqpClient = amqpClient;
+            _amqpPublisher = amqpClient;
             _productRepository = productRepository;
             _logger = logger;
         }
@@ -41,8 +41,8 @@ namespace Unison.Cloud.Web.Controllers
             _logger.LogInformation("Got request");
             string message = request.Message;
 
-            _amqpClient.Publish(message);
-            _logger.LogInformation($"Published: {message}");
+            //_amqpClient.Publish(message);
+            //_logger.LogInformation($"Published: {message}");
 
             return Ok();
         }

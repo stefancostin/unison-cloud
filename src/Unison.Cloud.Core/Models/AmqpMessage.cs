@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unison.Cloud.Core.Services
+namespace Unison.Cloud.Core.Models
 {
-    public interface ISync
+    public class AmqpMessage
     {
-        void Execute(object state);
+        public string Query { get; set; }
     }
 }

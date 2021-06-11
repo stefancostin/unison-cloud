@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unison.Cloud.Infrastructure.Amqp
+namespace Unison.Cloud.Infrastructure.Amqp.Interfaces
 {
     public interface IAmqpChannelFactory
     {

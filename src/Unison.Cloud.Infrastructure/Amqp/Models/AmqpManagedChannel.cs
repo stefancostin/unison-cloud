@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Services.Amqp;
+using Unison.Cloud.Infrastructure.Amqp.Interfaces;
 
-namespace Unison.Cloud.Infrastructure.Amqp
+namespace Unison.Cloud.Infrastructure.Amqp.Models
 {
     public class AmqpManagedChannel : IAmqpManagedChannel
     {
@@ -31,13 +31,18 @@ namespace Unison.Cloud.Infrastructure.Amqp
             if (_channel.IsOpen)
             {
                 return _channel;
-             }
+            }
             else
             {
                 _channel?.Dispose();
                 _channel = _channelFactory.CreateUnmanagedChannel();
                 return _channel;
             }
+        }
+
+        public void Dispose()
+        {
+            _channel?.Dispose();
         }
 
         ~AmqpManagedChannel()
