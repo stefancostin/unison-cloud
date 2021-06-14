@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Interfaces.Amqp;
 using Unison.Cloud.Core.Interfaces.Workers;
 using Unison.Cloud.Core.Models;
 

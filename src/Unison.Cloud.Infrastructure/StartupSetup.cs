@@ -5,13 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Interfaces.Amqp;
 using Unison.Cloud.Infrastructure.Amqp;
-using Unison.Cloud.Infrastructure.Amqp.Client;
-using Unison.Cloud.Infrastructure.Amqp.Factories;
-using Unison.Cloud.Infrastructure.Amqp.Interfaces;
 using Unison.Cloud.Infrastructure.Data;
 using Unison.Cloud.Infrastructure.Data.Repositories;
+using Unison.Common.Amqp;
+using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Infrastructure
 {
@@ -29,11 +27,10 @@ namespace Unison.Cloud.Infrastructure
 
         public static void AddAmqpContext(this IServiceCollection services)
         {
-            services.AddSingleton<IAmqpChannelFactory, AmqpChannelFactory>();
+            services.AddAmqpInfrastructure();
 
             services.AddScoped<IAmqpInfrastructureInitializer, AmqpInfrastructureInitializer>();
-            services.AddScoped<IAmqpSubscriberFactory, AmqpSubscriberFactory>();
-            services.AddScoped<IAmqpPublisher, AmqpPublisher>();
+            services.AddScoped<IAmqpSubscriberInitializer, AmqpSubscriberInitializer>();
         }
     }
 }

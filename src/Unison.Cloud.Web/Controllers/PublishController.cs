@@ -5,11 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Interfaces.Amqp;
-using Unison.Cloud.Infrastructure.Amqp;
 using Unison.Cloud.Infrastructure.Data.Entities;
 using Unison.Cloud.Infrastructure.Data.Repositories;
 using Unison.Cloud.Infrastructure.Models;
+using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Web.Controllers
 {

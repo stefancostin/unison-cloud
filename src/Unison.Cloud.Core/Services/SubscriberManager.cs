@@ -8,8 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Interfaces.Amqp;
 using Unison.Cloud.Core.Interfaces.Configuration;
+using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Core.Services
 {
@@ -54,10 +54,10 @@ namespace Unison.Cloud.Core.Services
             using (var scope = _services.CreateScope())
             {
                 var amqpInfrastructureInitializer = scope.ServiceProvider.GetRequiredService<IAmqpInfrastructureInitializer>();
-                var exchangeQueueMap = amqpInfrastructureInitializer.Initialize();
+                amqpInfrastructureInitializer.Initialize();
 
-                var subscriberFactory = scope.ServiceProvider.GetRequiredService<IAmqpSubscriberFactory>();
-                _subscribers = subscriberFactory.CreateSubscribers(exchangeQueueMap);
+                var subscriberInitializer = scope.ServiceProvider.GetRequiredService<IAmqpSubscriberInitializer>();
+                _subscribers = subscriberInitializer.Initialize();
             }
         }
     }

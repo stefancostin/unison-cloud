@@ -4,11 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Interfaces.Amqp;
 using Unison.Cloud.Core.Interfaces.Configuration;
-using Unison.Cloud.Core.Models;
-using Unison.Cloud.Infrastructure.Amqp.Interfaces;
-using Unison.Cloud.Infrastructure.Amqp.Models;
+using Unison.Common.Amqp.Constants;
+using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Infrastructure.Amqp
 {
@@ -16,22 +14,22 @@ namespace Unison.Cloud.Infrastructure.Amqp
     {
         private readonly IAmqpConfiguration _amqpConfig;
         private readonly IAmqpChannelFactory _channelFactory;
-        private readonly Dictionary<string, string> _consumerExchangeQueueMap;
+        private readonly IAmqpInitializationState _initializationState;
 
-        public AmqpInfrastructureInitializer(IAmqpConfiguration amqpConfig, IAmqpChannelFactory channelFactory)
+        public AmqpInfrastructureInitializer(IAmqpConfiguration amqpConfig, IAmqpChannelFactory channelFactory, IAmqpInitializationState initializationState)
         {
             _amqpConfig = amqpConfig;
             _channelFactory = channelFactory;
-            _consumerExchangeQueueMap = new Dictionary<string, string>();
+            _initializationState = initializationState;
         }
 
-        public Dictionary<string, string> Initialize()
+        public void Initialize()
         {
             using (var channel = _channelFactory.CreateUnmanagedChannel())
             {
                 BindToResponsesExchange(channel);
             }
-            return _consumerExchangeQueueMap;
+            
         }
 
         private void BindToResponsesExchange(IModel channel)
@@ -51,7 +49,7 @@ namespace Unison.Cloud.Infrastructure.Amqp
                  routingKey: routingKey,
                  arguments: null);
 
-            _consumerExchangeQueueMap.Add(AmqpExchangeNames.Responses, queue);
+            _initializationState.ConsumerExchangeQueueMap.Add(AmqpExchangeNames.Responses, queue);
         }
     }
 }

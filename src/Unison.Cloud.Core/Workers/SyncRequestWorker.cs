@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Core.Interfaces.Amqp;
 using Unison.Cloud.Core.Interfaces.Workers;
-using Unison.Cloud.Core.Models;
+using Unison.Common.Amqp.DTO;
+using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Core.Workers
 {
@@ -25,7 +25,7 @@ namespace Unison.Cloud.Core.Workers
         {
             _logger.LogInformation("Sending query...");
             var message = new AmqpMessage { Query = "SELECT * FROM Products" };
-            _amqpPublisher.Publish(message);
+            _amqpPublisher.PublishMessage(message);
         }
     }
 }
