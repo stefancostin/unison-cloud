@@ -29,7 +29,6 @@ namespace Unison.Cloud.Infrastructure.Amqp
             {
                 BindToResponsesExchange(channel);
             }
-            
         }
 
         private void BindToResponsesExchange(IModel channel)

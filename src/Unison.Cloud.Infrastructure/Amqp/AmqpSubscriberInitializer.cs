@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Interfaces.Workers;
 using Unison.Common.Amqp.Constants;
+using Unison.Common.Amqp.DTO;
 using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Infrastructure.Amqp
@@ -39,16 +40,16 @@ namespace Unison.Cloud.Infrastructure.Amqp
         }
 
 
-        private IAmqpSubscriber InitializeConnectionsSubscriber(IServiceScope scope)
-        {
-            var connectionsWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker>();
-            var queue = _consumerExchangeQueueMap[AmqpExchangeNames.Connections];
-            return _subscriberFactory.CreateSubscriber(queue, connectionsWorker);
-        }
+        //private IAmqpSubscriber InitializeConnectionsSubscriber(IServiceScope scope)
+        //{
+        //    var connectionsWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker>();
+        //    var queue = _consumerExchangeQueueMap[AmqpExchangeNames.Connections];
+        //    return _subscriberFactory.CreateSubscriber(queue, connectionsWorker);
+        //}
 
         private IAmqpSubscriber InitializeSyncResultsSubscriber(IServiceScope scope)
         {
-            var syncResultWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker>();
+            var syncResultWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker<AmqpResponse>>();
             var queue = _consumerExchangeQueueMap[AmqpExchangeNames.Responses];
             return _subscriberFactory.CreateSubscriber(queue, syncResultWorker);
         }

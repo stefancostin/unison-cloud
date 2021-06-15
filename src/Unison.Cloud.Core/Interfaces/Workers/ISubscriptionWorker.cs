@@ -7,5 +7,5 @@ using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Core.Interfaces.Workers
 {
-    public interface ISubscriptionWorker : IAmqpSubscriptionWorker { }
+    public interface ISubscriptionWorker<T> : IAmqpSubscriptionWorker<T> { }
 }
