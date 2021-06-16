@@ -10,7 +10,7 @@ using Unison.Common.Amqp.DTO;
 
 namespace Unison.Cloud.Core.Workers
 {
-    public class SyncResultWorker : ISubscriptionWorker<AmqpResponse>
+    public class SyncResultWorker : ISubscriptionWorker<AmqpSyncResponse>
     {
         private readonly ILogger<SyncRequestWorker> _logger;
 
@@ -19,7 +19,7 @@ namespace Unison.Cloud.Core.Workers
             _logger = logger;
         }
 
-        public void ProcessMessage(AmqpResponse message)
+        public void ProcessMessage(AmqpSyncResponse message)
         {
             _logger.LogInformation($"Got message from agent: {message.QueryResult}");
         }

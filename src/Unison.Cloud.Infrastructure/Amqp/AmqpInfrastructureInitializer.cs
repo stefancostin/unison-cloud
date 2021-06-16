@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Interfaces.Configuration;
-using Unison.Common.Amqp.Constants;
+using Unison.Cloud.Core.Models;
 using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Infrastructure.Amqp
@@ -14,21 +14,42 @@ namespace Unison.Cloud.Infrastructure.Amqp
     {
         private readonly IAmqpConfiguration _amqpConfig;
         private readonly IAmqpChannelFactory _channelFactory;
-        private readonly IAmqpInitializationState _initializationState;
 
-        public AmqpInfrastructureInitializer(IAmqpConfiguration amqpConfig, IAmqpChannelFactory channelFactory, IAmqpInitializationState initializationState)
+        public AmqpInfrastructureInitializer(IAmqpConfiguration amqpConfig, IAmqpChannelFactory channelFactory)
         {
             _amqpConfig = amqpConfig;
             _channelFactory = channelFactory;
-            _initializationState = initializationState;
+
+            amqpConfig.Queues = new AmqpQueues();
         }
 
         public void Initialize()
         {
             using (var channel = _channelFactory.CreateUnmanagedChannel())
             {
+                BindToConnectionsExchange(channel);
                 BindToResponsesExchange(channel);
             }
+        }
+
+        private void BindToConnectionsExchange(IModel channel)
+        { 
+            var exchange = _amqpConfig.Exchanges.Connections;
+            var queue = exchange;
+            var routingKey = exchange;
+
+            channel.QueueDeclare(queue: queue,
+                                 durable: false,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null);
+
+            channel.QueueBind(queue: queue,
+                 exchange: exchange,
+                 routingKey: routingKey,
+                 arguments: null);
+
+            _amqpConfig.Queues.Connections = queue;
         }
 
         private void BindToResponsesExchange(IModel channel)
@@ -48,7 +69,7 @@ namespace Unison.Cloud.Infrastructure.Amqp
                  routingKey: routingKey,
                  arguments: null);
 
-            _initializationState.ConsumerExchangeQueueMap.Add(AmqpExchangeNames.Responses, queue);
+            _amqpConfig.Queues.Response = queue;
         }
     }
 }

@@ -11,5 +11,7 @@ namespace Unison.Cloud.Core.Interfaces.Configuration
     {
         AmqpCredentials Credentials { get; set; }
         AmqpExchanges Exchanges { get; set; }
+        AmqpCommands Commands { get; set; }
+        AmqpQueues Queues { get; set; }
     }
 }

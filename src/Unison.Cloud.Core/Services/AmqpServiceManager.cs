@@ -13,14 +13,14 @@ using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Core.Services
 {
-    public class SubscriberManager : IHostedService
+    public class AmqpServiceManager : IHostedService
     {
         private readonly IAmqpConfiguration _amqpConfig;
         private readonly IServiceProvider _services;
-        private readonly ILogger<SubscriberManager> _logger;
+        private readonly ILogger<AmqpServiceManager> _logger;
         private IEnumerable<IAmqpSubscriber> _subscribers;
 
-        public SubscriberManager(IServiceProvider services, IAmqpConfiguration amqpConfig, ILogger<SubscriberManager> logger)
+        public AmqpServiceManager(IServiceProvider services, IAmqpConfiguration amqpConfig, ILogger<AmqpServiceManager> logger)
         {
             _amqpConfig = amqpConfig;
             _logger = logger;
@@ -31,10 +31,9 @@ namespace Unison.Cloud.Core.Services
         {
             InitializeAmqpInfrastructure();
 
-            foreach (var subscriber in _subscribers)
-            {
-               subscriber.Subscribe();
-            }
+            Parallel.ForEach(_subscribers, subscriber => subscriber.Subscribe());
+
+            SendInitialReconnectCommand();
 
             return Task.CompletedTask;
         }
@@ -58,6 +57,17 @@ namespace Unison.Cloud.Core.Services
 
                 var subscriberInitializer = scope.ServiceProvider.GetRequiredService<IAmqpSubscriberInitializer>();
                 _subscribers = subscriberInitializer.Initialize();
+            }
+        }
+
+        private void SendInitialReconnectCommand()
+        {
+            using (var scope = _services.CreateScope())
+            {
+                var amqpPublisher = scope.ServiceProvider.GetRequiredService<IAmqpPublisher>();
+                var exchange = _amqpConfig.Exchanges.Commands;
+                var rouingKey = $"{_amqpConfig.Exchanges.Commands}.{_amqpConfig.Commands.Reconnect}";
+                amqpPublisher.PublishMessage(null, exchange, rouingKey);
             }
         }
     }

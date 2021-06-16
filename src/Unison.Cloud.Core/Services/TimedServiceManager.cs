@@ -13,20 +13,19 @@ namespace Unison.Cloud.Core.Services
 {
     public class TimedServiceManager : BackgroundService
     {
+        private readonly IServiceProvider _services;
         private readonly ILogger<TimedServiceManager> _logger;
         private Timer _timer;
 
         public TimedServiceManager(IServiceProvider services, ILogger<TimedServiceManager> logger)
         {
-            Services = services;
+            _services = services;
             _logger = logger;
         }
 
-        public IServiceProvider Services { get; }
-
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using (var scope = Services.CreateScope())
+            using (var scope = _services.CreateScope())
             {
                 var syncRequestWorker = scope.ServiceProvider.GetRequiredService<ITimedWorker>();
                 _timer = new Timer(syncRequestWorker.Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
