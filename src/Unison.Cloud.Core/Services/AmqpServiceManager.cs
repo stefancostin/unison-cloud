@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Interfaces.Configuration;
+using Unison.Common.Amqp.DTO;
 using Unison.Common.Amqp.Interfaces;
 
 namespace Unison.Cloud.Core.Services
@@ -65,9 +66,11 @@ namespace Unison.Cloud.Core.Services
             using (var scope = _services.CreateScope())
             {
                 var amqpPublisher = scope.ServiceProvider.GetRequiredService<IAmqpPublisher>();
+
                 var exchange = _amqpConfig.Exchanges.Commands;
-                var rouingKey = $"{_amqpConfig.Exchanges.Commands}.{_amqpConfig.Commands.Reconnect}";
-                amqpPublisher.PublishMessage(null, exchange, rouingKey);
+                var routingKey = $"{_amqpConfig.Exchanges.Commands}.{_amqpConfig.Commands.Reconnect}";
+
+                amqpPublisher.PublishMessage(new AmqpReconnect(), exchange, routingKey);
             }
         }
     }

@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Infrastructure.Data.Entities;
+using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Interfaces.Data;
 
 namespace Unison.Cloud.Infrastructure.Data.Repositories
 {
@@ -30,6 +31,11 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
         public async Task<IEnumerable<Product>> GetAllAsync()
         {
             return await _context.Products.ToListAsync();
+        }
+
+        public IEnumerable<Product> GetAll()
+        {
+            return _context.Products.ToList();
         }
     }
 }

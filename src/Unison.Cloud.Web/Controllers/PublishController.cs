@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unison.Cloud.Infrastructure.Data.Entities;
-using Unison.Cloud.Infrastructure.Data.Repositories;
+using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Infrastructure.Models;
 using Unison.Common.Amqp.Interfaces;
 

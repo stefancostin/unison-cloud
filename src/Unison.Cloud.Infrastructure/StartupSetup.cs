@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Infrastructure.Amqp;
 using Unison.Cloud.Infrastructure.Data;
 using Unison.Cloud.Infrastructure.Data.Repositories;
@@ -22,7 +23,11 @@ namespace Unison.Cloud.Infrastructure
         public static void AddDbContext(this IServiceCollection services)
         {
             services.AddDbContext<AppDbContext>();
+
+            services.AddSingleton<IDbContext, WorkerDbContext>();
+
             services.AddScoped<IProductRepository, ProductRepository>();
+            services.AddScoped<ISQLRepository, SQLRepository>();
         }
 
         public static void AddAmqpContext(this IServiceCollection services)

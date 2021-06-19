@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unison.Cloud.Infrastructure.Data.Entities;
+using Unison.Cloud.Core.Data;
 
-namespace Unison.Cloud.Infrastructure.Data.Repositories
+namespace Unison.Cloud.Core.Interfaces.Data
 {
     public interface IProductRepository
     {
         Task<IEnumerable<Product>> GetAllAsync();
+        IEnumerable<Product> GetAll();
         void Add(Product product);
 
     }

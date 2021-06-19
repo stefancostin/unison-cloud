@@ -28,7 +28,7 @@ namespace Unison.Cloud.Infrastructure
             services.AddTransient<ITimedWorker, SyncRequestWorker>();
 
             services.AddScoped<ISubscriptionWorker<AmqpSyncResponse>, SyncResultWorker>();
-            services.AddScoped<ISubscriptionWorker<AmqpConnected>, ConnectionWorker>();
+            services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();
 
             services.AddHostedService<TimedServiceManager>();
             services.AddHostedService<AmqpServiceManager>();
