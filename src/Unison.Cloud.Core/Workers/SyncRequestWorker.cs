@@ -24,7 +24,7 @@ namespace Unison.Cloud.Core.Workers
         public void Execute(object state)
         {
             _logger.LogInformation("Sending query...");
-            var message = new AmqpSyncRequest { Query = "SELECT * FROM Products" };
+            var message = new AmqpSyncRequest { Entity = "Products", Fields = new List<string>() { "Id", "Name", "Price" }, PrimaryKey = "Id" };
             _amqpPublisher.PublishMessage(message, "unison.commands", "unison.commands.sync");
         }
     }
