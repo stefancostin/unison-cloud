@@ -21,7 +21,7 @@ namespace Unison.Cloud.Core.Workers
 
         public void ProcessMessage(AmqpSyncResponse message)
         {
-            _logger.LogInformation($"Got message from agent: {message.QueryResult}");
+            _logger.LogInformation($"Got message from agent: {message.Agent.AgentId}");
         }
     }
 }

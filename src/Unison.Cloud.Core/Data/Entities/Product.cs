@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unison.Cloud.Core.Data
+namespace Unison.Cloud.Core.Data.Entities
 {
     public class Product
     {

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
+using Unison.Cloud.Core.Models;
+using Unison.Cloud.Core.Utilities;
 using Unison.Common.Amqp.DTO;
 using Unison.Common.Amqp.Interfaces;
 
@@ -31,12 +33,21 @@ namespace Unison.Cloud.Core.Workers
         {
             _logger.LogInformation($"Connections-Worker: Got message from agent with id: {message.Agent.AgentId}");
 
-            var products = _repository.Read("SELECT Id, Name, Price FROM Products");
+            // TODO: Construct the query schema from the client's database records
+            var schema = new QuerySchema()
+            {
+                Entity = "Products",
+                Fields = new List<string>() { "Id", "Name", "Price" },
+                PrimaryKey = "Id"
+            };
 
-            var productsCache = new AmqpCachedEntity() { Entity = "Products", Data = products };
+            var products = _repository.Read(schema);
 
-            var cache = new AmqpCache() {
-                Entities = new List<AmqpCachedEntity> { productsCache }
+            var productsCache = products.ToAmqpDataSetModel();
+
+            var cache = new AmqpCache()
+            {
+                Entities = new List<AmqpDataSet> { productsCache }
             };
 
             PublishMessage(cache);

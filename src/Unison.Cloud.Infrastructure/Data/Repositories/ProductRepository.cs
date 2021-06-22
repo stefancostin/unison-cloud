@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Interfaces.Data;
 
 namespace Unison.Cloud.Infrastructure.Data.Repositories

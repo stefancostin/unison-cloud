@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Models;
 
 namespace Unison.Cloud.Core.Interfaces.Data
 {
     public interface ISQLRepository
     {
-        List<Dictionary<string, object>> Read(string sql);
+        DataSet Read(QuerySchema schema);
     }
 }

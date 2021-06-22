@@ -5,57 +5,74 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Data;
 
 namespace Unison.Cloud.Infrastructure.Data.Adapters
 {
     public class DbDataReaderAdapter
     {
         private readonly DbDataReader _reader;
-        private List<string> _columns;
+        private IEnumerable<ColumnMetadata> _columns;
 
         public DbDataReaderAdapter(DbDataReader reader)
         {
             _reader = reader;
         }
 
-        public Dictionary<string, object> Read()
+        public Record Read()
         {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            List<string> columns = GetColumns();
+            Record record = new Record();
+            IEnumerable<ColumnMetadata> columns = GetColumns();
 
             foreach (var column in columns)
             {
-                result.Add(column, _reader[column]);
+                record.AddField(column.ColumnName, column.DataType, _reader[column.ColumnName]);
             }
 
-            return result;
+            return record;
         }
 
-        private List<string> ExtractColumns()
+        private IEnumerable<ColumnMetadata> ExtractColumnMetadata()
         {
-            List<string> columns = new List<string>();
+            IList<ColumnMetadata> columns = new List<ColumnMetadata>();
 
             DataTable schemaTable = _reader.GetSchemaTable();
 
             foreach (DataRow row in schemaTable.Rows)
             {
+                var columnMetadata = new ColumnMetadata();
+
                 foreach (DataColumn column in schemaTable.Columns)
                 {
-                    columns.Add((string)row[column]);
-                    break;
+                    if (column.ColumnName == ColumnMetadata.ColumnNameDbKey)
+                        columnMetadata.ColumnName = (string)row[column];
+
+                    else if (column.ColumnName == ColumnMetadata.DataTypeDbKey)
+                        columnMetadata.DataType = (Type)row[column];
                 }
+
+                columns.Add(columnMetadata);
             }
 
             return columns;
         }
 
 
-        private List<string> GetColumns()
+        private IEnumerable<ColumnMetadata> GetColumns()
         {
             if (_columns == null)
-                _columns = ExtractColumns();
+                _columns = ExtractColumnMetadata();
 
             return _columns;
         }
+    }
+
+    internal class ColumnMetadata
+    {
+        public const string ColumnNameDbKey = "ColumnName";
+        public const string DataTypeDbKey = "DataType";
+
+        public string ColumnName { get; set; }
+        public Type DataType { get; set; }
     }
 }

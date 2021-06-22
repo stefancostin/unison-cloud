@@ -3,11 +3,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Data;
 using Unison.Cloud.Core.Interfaces.Data;
+using Unison.Cloud.Core.Models;
 using Unison.Cloud.Infrastructure.Data.Adapters;
 
 namespace Unison.Cloud.Infrastructure.Data.Repositories
@@ -23,17 +24,17 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             _logger = logger;
         }
 
-        public List<Dictionary<string, object>> Read(string sql)
+        public DataSet Read(QuerySchema schema)
         {
-            List<Dictionary<string, object>> result = new List<Dictionary<string, object>>();
+            DataSet result = new DataSet(schema.Entity, schema.PrimaryKey);
 
             using var connection = _context.GetConnection();
             try
             {
                 connection.Open();
 
-                using var command = connection.CreateCommand();
-                command.CommandText = sql;
+                var commandAdapter = new DbCommandAdapter(connection);
+                using var command = commandAdapter.ConvertToDbCommand(schema);
 
                 using var reader = command.ExecuteReader();
                 var readerAdapter = new DbDataReaderAdapter(reader);
@@ -42,7 +43,7 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
                 {
                     while (reader.Read())
                     {
-                        result.Add(readerAdapter.Read());
+                        result.AddRecord(readerAdapter.Read());
                     }
 
                     reader.NextResult();
@@ -57,6 +58,5 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
                 connection.Close();
             }
         }
-
     }
 }
