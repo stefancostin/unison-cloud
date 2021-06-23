@@ -24,10 +24,10 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
 
         public DbCommand ConvertToDbCommand(QuerySchema schema)
         {
-            SanitizeIdentifiers(schema);
+            var sanitizedSchema = SanitizeIdentifiers(schema);
 
-            var sql = GenerateSql(schema);
-            var command = CreateDbCommand(schema, sql);
+            var sql = GenerateSql(sanitizedSchema);
+            var command = CreateDbCommand(sanitizedSchema, sql);
 
             return command;
         }
@@ -91,16 +91,18 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             }
         }
 
-        private void SanitizeIdentifiers(QuerySchema schema)
+        private QuerySchema SanitizeIdentifiers(QuerySchema schema)
         {
             var commandBuilder = new SqlCommandBuilder();
-            schema.Entity = commandBuilder.QuoteIdentifier(schema.Entity);
-            schema.Fields = schema.Fields.Select(field => commandBuilder.QuoteIdentifier(field));
-            schema.Params = schema.Params.Select(param => new QueryParam()
+            var sanitizedSchema = new QuerySchema();
+            sanitizedSchema.Entity = commandBuilder.QuoteIdentifier(schema.Entity);
+            sanitizedSchema.Fields = schema.Fields.Select(field => commandBuilder.QuoteIdentifier(field));
+            sanitizedSchema.Params = schema.Params.Select(param => new QueryParam()
             {
                 Field = commandBuilder.QuoteIdentifier(param.Field),
                 Value = param.Value,
             });
+            return sanitizedSchema;
         }
     }
 
