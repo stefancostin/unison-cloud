@@ -11,5 +11,6 @@ namespace Unison.Cloud.Core.Interfaces.Data
     public interface ISQLRepository
     {
         DataSet Read(QuerySchema schema);
+        int Execute(QuerySchema schema);
     }
 }

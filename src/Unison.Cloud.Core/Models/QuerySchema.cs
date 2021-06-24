@@ -36,6 +36,7 @@ namespace Unison.Cloud.Core.Models
         }
 
         public string Name { get; set; }
+        public string Param { get; set; }
         public Type Type { get; set; }
         public object Value { get; set; }
     }

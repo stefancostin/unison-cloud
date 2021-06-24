@@ -58,5 +58,25 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
                 connection.Close();
             }
         }
+
+        public int Execute(QuerySchema schema)
+        {
+            using var connection = _context.GetConnection();
+            try
+            {
+                connection.Open();
+
+                var commandAdapter = new DbCommandAdapter(connection);
+                using var command = commandAdapter.ConvertToDbCommand(schema);
+
+                var recordsAffected = command.ExecuteNonQuery();
+
+                return recordsAffected;
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
     }
 }
