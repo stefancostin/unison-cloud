@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Models;
 using Unison.Common.Amqp.DTO;
 
 namespace Unison.Cloud.Core.Utilities
 {
     public static class Mapper
     {
+        #region Data.Fields
         public static AmqpField ToAmqpFieldModel(this Field field)
         {
             if (field == null)
@@ -26,6 +28,24 @@ namespace Unison.Cloud.Core.Utilities
             return new Field(name: amqpField.Name, type: amqpField.Type, value: amqpField.Value);
         }
 
+        public static Field ToFieldModel(this QueryParam schemaField)
+        {
+            if (schemaField == null)
+                return null;
+
+            return new Field(name: schemaField.Name, type: schemaField.Type, value: schemaField.Value);
+        }
+
+        public static QueryParam ToQueryParamModel(this AmqpField amqpField)
+        {
+            if (amqpField == null)
+                return null;
+
+            return new QueryParam(name: amqpField.Name, type: amqpField.Type, value: amqpField.Value);
+        }
+        #endregion
+
+        #region Data.Records
         public static AmqpRecord ToAmqpRecordModel(this Record record)
         {
             if (record == null)
@@ -56,6 +76,23 @@ namespace Unison.Cloud.Core.Utilities
             return record;
         }
 
+        public static QueryRecord ToQueryRecordModel(this AmqpRecord amqpRecord)
+        {
+            if (amqpRecord == null)
+                return null;
+
+            QueryRecord record = new QueryRecord();
+
+            if (amqpRecord.Fields == null)
+                return record;
+
+            record.Fields = amqpRecord.Fields.Select(f => f.Value?.ToQueryParamModel());
+
+            return record;
+        }
+        #endregion
+
+        #region Data.DataSets
         public static AmqpDataSet ToAmqpDataSetModel(this DataSet dataSet)
         {
             if (dataSet == null)
@@ -85,5 +122,26 @@ namespace Unison.Cloud.Core.Utilities
 
             return dataSet;
         }
+
+        public static QuerySchema ToQuerySchema(this AmqpDataSet amqpDataSet, QueryOperation operation)
+        {
+            if (amqpDataSet == null)
+                return null;
+
+            QuerySchema schema = new QuerySchema() {
+                Entity = amqpDataSet.Entity,
+                PrimaryKey = amqpDataSet.PrimaryKey,
+                Operation = operation
+            };
+
+            if (amqpDataSet.Records == null || !amqpDataSet.Records.Any())
+                return schema;
+
+            schema.Fields = amqpDataSet.Records.First().Value.Fields.Select(f => f.Value.Name).ToList();
+            schema.Records = amqpDataSet.Records.Select(r => r.Value?.ToQueryRecordModel()).ToList();
+
+            return schema;
+        }
+        #endregion
     }
 }

@@ -37,7 +37,7 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             var command = new SqlCommand(sql, (SqlConnection)Connection);
             command.CommandType = CommandType.Text;
 
-            if (schema.Params.Any())
+            if (schema.Conditions.Any())
                 SanitizeAndAddParams(schema, command);
 
             return command;
@@ -47,9 +47,79 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
 
         private string GenerateSql(QuerySchema schema)
         {
+            return schema.Operation switch
+            {
+                QueryOperation.Read => GenerateReadSql(schema),
+                QueryOperation.Insert => GenerateInsertSql(schema),
+                QueryOperation.Update => GenerateUpdateSql(schema),
+                QueryOperation.Delete => GenerateDeleteSql(schema),
+                _ => GenerateReadSql(schema),
+            };
+        }
+
+        private string GenerateInsertSql(QuerySchema schema)
+        {
+            var table = schema.Entity;
+            var fields = string.Join(FieldSeparator, schema.Fields);
+
+            var sql = $"{Sql.Insert} {table} {fields} {Sql.Values} \r\n";
+
+            foreach (QueryRecord record in schema.Records)
+            {
+                var values = record.Fields.Select(f => f.Value.ToString());
+                sql += string.Join(FieldSeparator, values) + "\r\n";
+            }    
+
+            return sql;
+        }
+
+        private string GenerateUpdateSql(QuerySchema schema)
+        {
+            var table = schema.Entity;
+            var fields = string.Join(FieldSeparator, schema.Fields);
+
+            var sql = $"{Sql.Begin} \r\n";
+
+            var updateStatement = $"{Sql.Update} {table} {Sql.Set}";
+
+            foreach (QueryRecord record in schema.Records)
+            {
+                var values = record.Fields.Select(f => $"{f.Name} = {f.Value}");
+                var updateValues = string.Join(FieldSeparator, values);
+                sql += $"{updateStatement} {updateValues}; \r\n";
+            }
+
+            sql += $"\r\n {Sql.End};";
+
+            return sql;
+        }
+
+        private string GenerateDeleteSql(QuerySchema schema)
+        {
+            var table = schema.Entity;
+            var fields = string.Join(FieldSeparator, schema.Fields);
+
+            var sql = $"{Sql.Begin} \r\n";
+
+            var deleteStatement = $"{Sql.Delete} {Sql.From} {table} {Sql.Where}";
+
+            foreach (QueryRecord record in schema.Records)
+            {
+                var pkField = record.Fields.First(f => f.Name == schema.PrimaryKey);
+                var deleteCondition = $"{pkField.Name} = {pkField.Value}";
+                sql += $"{deleteStatement} {deleteCondition}; \r\n";
+            }
+
+            sql += $"\r\n {Sql.End};";
+
+            return sql;
+        }
+
+        private string GenerateReadSql(QuerySchema schema)
+        {
             string selectStatement = GenerateSelectStatement(schema);
 
-            if (!schema.Params.Any())
+            if (!schema.Conditions.Any())
                 return selectStatement;
 
             string whereSatement = GenerateWhereStatement(schema);
@@ -57,7 +127,7 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             return $"{selectStatement} {whereSatement}";
         }
 
-        private static string GenerateSelectStatement(QuerySchema schema)
+        private string GenerateSelectStatement(QuerySchema schema)
         {
             var table = schema.Entity;
             var fields = string.Join(FieldSeparator, schema.Fields);
@@ -67,9 +137,9 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
 
         private string GenerateWhereStatement(QuerySchema schema)
         {
-            var conditionsCount = schema.Params.Count();
-            var conditionFields = schema.Params.Select(p => p.Field).ToList();
-            var conditionParams = schema.Params.Select(p => CreateParameter(p.Field)).ToList();
+            var conditionsCount = schema.Conditions.Count();
+            var conditionFields = schema.Conditions.Select(p => p.Name).ToList();
+            var conditionParams = schema.Conditions.Select(p => CreateParameter(p.Name)).ToList();
 
             var conditions = new StringBuilder($"{Sql.Where} ");
             for (int i = 0; i < conditionsCount; i++)
@@ -85,9 +155,9 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
 
         private void SanitizeAndAddParams(QuerySchema schema, SqlCommand command)
         {
-            foreach (var param in schema.Params)
+            foreach (var param in schema.Conditions)
             {
-                command.Parameters.AddWithValue(CreateParameter(param.Field), param.Value);
+                command.Parameters.AddWithValue(CreateParameter(param.Name), param.Value);
             }
         }
 
@@ -97,9 +167,9 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             var sanitizedSchema = new QuerySchema();
             sanitizedSchema.Entity = commandBuilder.QuoteIdentifier(schema.Entity);
             sanitizedSchema.Fields = schema.Fields.Select(field => commandBuilder.QuoteIdentifier(field));
-            sanitizedSchema.Params = schema.Params.Select(param => new QueryParam()
+            sanitizedSchema.Conditions = schema.Conditions.Select(param => new QueryParam()
             {
-                Field = commandBuilder.QuoteIdentifier(param.Field),
+                Name = commandBuilder.QuoteIdentifier(param.Name),
                 Value = param.Value,
             });
             return sanitizedSchema;
@@ -115,6 +185,13 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
         public const string OrderBy = "ORDER BY";
         public const string GroupBy = "GROUP BY";
         public const string Having = "HAVING";
+        public const string Insert = "INSERT INTO";
+        public const string Values = "VALUES";
+        public const string Update = "UPDATE";
+        public const string Set = "SET";
+        public const string Delete = "DELETE";
+        public const string Begin = "BEGIN";
+        public const string End = "END";
         public const string And = "AND";
         public const string Or = "OR";
     }
