@@ -123,22 +123,40 @@ namespace Unison.Cloud.Core.Utilities
             return dataSet;
         }
 
-        public static QuerySchema ToQuerySchema(this AmqpDataSet amqpDataSet, QueryOperation operation)
+        public static QuerySchema ToQuerySchema(this AmqpDataSet amqpDataSet, int agentId, QueryOperation operation)
         {
             if (amqpDataSet == null)
                 return null;
 
             QuerySchema schema = new QuerySchema() {
                 Entity = amqpDataSet.Entity,
-                PrimaryKey = amqpDataSet.PrimaryKey,
+                PrimaryKey = Agent.RecordIdKey,
                 Operation = operation
             };
 
             if (amqpDataSet.Records == null || !amqpDataSet.Records.Any())
                 return schema;
 
-            schema.Fields = amqpDataSet.Records.First().Value.Fields.Select(f => f.Value.Name).ToList();
-            schema.Records = amqpDataSet.Records.Select(r => r.Value?.ToQueryRecordModel()).ToList();
+            schema.Fields = amqpDataSet.Records.First().Value.Fields
+                .Select(f => f.Value.Name == amqpDataSet.PrimaryKey ? Agent.RecordIdKey : f.Value.Name)
+                .ToList();
+            schema.Records = amqpDataSet.Records
+                .Select(r => r.Value?.ToQueryRecordModel())
+                .Select(record =>
+                {
+                    record.Fields = record.Fields.Select(f => 
+                    {
+                        QueryParam field = new QueryParam(f);
+                        if (f.Name == amqpDataSet.PrimaryKey)
+                            field.Name = Agent.RecordIdKey;
+                        return field;
+                    });
+                    return record;
+                })
+                .ToList();
+
+            QueryParam agentCondition = new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId);
+            schema.Conditions = new List<QueryParam>() { agentCondition };
 
             return schema;
         }

@@ -61,6 +61,9 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public int Execute(QuerySchema schema)
         {
+            if (!schema.Records.Any())
+                return 0;
+
             using var connection = _context.GetConnection();
             try
             {

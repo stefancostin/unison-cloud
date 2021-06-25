@@ -37,9 +37,11 @@ namespace Unison.Cloud.Core.Workers
                 $" Updated: {message.State.Updated.Records.Count}," +
                 $" Deleted: {message.State.Deleted.Records.Count}.");
 
-            QuerySchema insertSchema = message.State.Added.ToQuerySchema(QueryOperation.Insert);
-            QuerySchema updateSchema = message.State.Updated.ToQuerySchema(QueryOperation.Update);
-            QuerySchema deleteSchema = message.State.Deleted.ToQuerySchema(QueryOperation.Delete);
+            // TODO: Get the agent id from an agents table based on the input received from the request
+
+            QuerySchema insertSchema = message.State.Added.ToQuerySchema(1, QueryOperation.Insert);
+            QuerySchema updateSchema = message.State.Updated.ToQuerySchema(1, QueryOperation.Update);
+            QuerySchema deleteSchema = message.State.Deleted.ToQuerySchema(1, QueryOperation.Delete);
 
             int updatedRecords = _repository.Execute(updateSchema);
 

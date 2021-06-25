@@ -41,7 +41,7 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             if (schema.Operation != QueryOperation.Read)
                 SanitizeAndAddValues(schema, command);
 
-            else if (schema.Conditions.Any())
+            if (schema.Conditions.Any())
                 SanitizeAndAddConditions(schema, command);
 
             return command;
@@ -121,6 +121,15 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
 
                 var pkField = record.Fields.First(f => f.Name == schema.PrimaryKey);
                 var updateCondition = $"{Sql.Where} {pkField.Name} = {pkField.Param}";
+
+                schema.Conditions = schema.Conditions
+                    .Select(c =>
+                    {
+                        c.Param = CreateParameter(c.Name);
+                        return c;
+                    }).ToList();
+
+                updateCondition += schema.Conditions.Aggregate("", (acc, c) => acc += $" {Sql.And} {c.Name} = {c.Param} ");
 
                 sql += $"{updateStatement} {updateValues} {updateCondition}; ";
 

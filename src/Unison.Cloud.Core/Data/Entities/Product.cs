@@ -11,6 +11,8 @@ namespace Unison.Cloud.Core.Data.Entities
     {
         public int Id { get; set; }
 
+        public int AgentRecordId { get; set; }
+
         public int AgentId { get; set; }
 
         public int NodeId { get; set; }
