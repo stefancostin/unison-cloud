@@ -86,7 +86,7 @@ namespace Unison.Cloud.Core.Utilities
             if (amqpRecord.Fields == null)
                 return record;
 
-            record.Fields = amqpRecord.Fields.Select(f => f.Value?.ToQueryParamModel());
+            record.Fields = amqpRecord.Fields.Select(f => f.Value?.ToQueryParamModel()).ToList();
 
             return record;
         }
@@ -142,18 +142,28 @@ namespace Unison.Cloud.Core.Utilities
                 .ToList();
             schema.Records = amqpDataSet.Records
                 .Select(r => r.Value?.ToQueryRecordModel())
-                .Select(record =>
+                .Select(r =>
                 {
-                    record.Fields = record.Fields.Select(f => 
+                    r.Fields = r.Fields.Select(f => 
                     {
                         QueryParam field = new QueryParam(f);
                         if (f.Name == amqpDataSet.PrimaryKey)
                             field.Name = Agent.RecordIdKey;
                         return field;
-                    });
-                    return record;
+                    })
+                    .ToList();
+                    return r;
+                })
+                .Select(r => 
+                {
+                    if (operation == QueryOperation.Insert)
+                        r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId));
+                    return r;
                 })
                 .ToList();
+
+            if (operation == QueryOperation.Insert)
+                schema.Fields.Add(Agent.IdKey);
 
             QueryParam agentCondition = new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId);
             schema.Conditions = new List<QueryParam>() { agentCondition };

@@ -37,11 +37,26 @@ namespace Unison.Cloud.Core.Workers
             var schema = new QuerySchema()
             {
                 Entity = "Products",
-                Fields = new List<string>() { "Id", "Name", "Price" },
-                PrimaryKey = "Id"
+                PrimaryKey = Agent.RecordIdKey,
+                Fields = new List<string>() { Agent.RecordIdKey, "Name", "Price" },
+                Conditions = new List<QueryParam>() { new QueryParam { Name = Agent.IdKey, Value = 1 } }
             };
 
             var products = _repository.Read(schema);
+
+            // TODO: Extract this to a different service or query schema mapper + Also add the specific actions from Mapper
+            // Map agent primary key to agent record id field
+            products.Records = products.Records.Select(r =>
+            {
+                r.Value.Fields = r.Value.Fields.ToDictionary(f => f.Key == Agent.RecordIdKey ? "Id" : f.Key, f =>
+                {
+                    if (f.Value.Name == Agent.RecordIdKey)
+                        f.Value.Name = "Id";
+                    return f.Value;
+                });
+                return r;
+            })
+            .ToDictionary(r => r.Key, r => r.Value);
 
             var productsCache = products.ToAmqpDataSetModel();
 

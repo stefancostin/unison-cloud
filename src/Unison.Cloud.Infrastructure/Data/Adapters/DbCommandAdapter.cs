@@ -12,7 +12,7 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
 {
     public class DbCommandAdapter
     {
-        private const string FieldSeparator = ", ";
+        private const string Separator = ", ";
         private const string ParameterIdentifier = "@";
         private readonly char[] ParameterBrackets = { '[', ']' };
 
@@ -38,7 +38,7 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             var command = new SqlCommand(sql, (SqlConnection)Connection);
             command.CommandType = CommandType.Text;
 
-            if (schema.Operation != QueryOperation.Read)
+            if (schema.Records.Any())
                 SanitizeAndAddValues(schema, command);
 
             if (schema.Conditions.Any())
@@ -72,9 +72,9 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
         private string GenerateInsertSql(QuerySchema schema)
         {
             var table = schema.Entity;
-            var fields = string.Join(FieldSeparator, schema.Fields);
+            var fields = string.Join(Separator, schema.Fields);
 
-            var sql = $"{Sql.Insert} {table} {fields} {Sql.Values} ";
+            var sql = new StringBuilder($"{Sql.Insert} {table} ({fields}) {Sql.Values} ");
 
             var recordIdx = 1;
             foreach (QueryRecord record in schema.Records)
@@ -83,24 +83,30 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
                 {
                     f.Param = CreateParameter(f.Name, recordIdx);
                     return f;
-                }).ToList();
+                })
+                .ToList();
 
                 var parameters = record.Fields.Select(f => f.Param);
 
-                sql += string.Join(FieldSeparator, parameters);
+                sql.Append("(")
+                   .Append(string.Join(Separator, parameters))
+                   .Append(")")
+                   .Append(Separator);
 
                 recordIdx++;
             }
 
-            return sql;
+            sql.Remove(sql.Length - Separator.Length, Separator.Length);
+
+            return sql.ToString();
         }
 
         private string GenerateUpdateSql(QuerySchema schema)
         {
             var table = schema.Entity;
-            var fields = string.Join(FieldSeparator, schema.Fields);
+            var fields = string.Join(Separator, schema.Fields);
 
-            var sql = $"{Sql.Begin} ";
+            var sql = new StringBuilder($"{Sql.Begin} ");
 
             var updateStatement = $"{Sql.Update} {table} {Sql.Set}";
 
@@ -111,42 +117,36 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
                 {
                     f.Param = CreateParameter(f.Name, recordIdx);
                     return f;
-                }).ToList();
+                })
+                .ToList();
 
                 var values = record.Fields
                     .Where(f => f.Name != schema.PrimaryKey)
                     .Select(f => $"{f.Name} = {f.Param}");
 
-                var updateValues = string.Join(FieldSeparator, values);
+                var updateValues = string.Join(Separator, values);
 
                 var pkField = record.Fields.First(f => f.Name == schema.PrimaryKey);
                 var updateCondition = $"{Sql.Where} {pkField.Name} = {pkField.Param}";
 
-                schema.Conditions = schema.Conditions
-                    .Select(c =>
-                    {
-                        c.Param = CreateParameter(c.Name);
-                        return c;
-                    }).ToList();
+                updateCondition += ReduceSqlConditions(schema);
 
-                updateCondition += schema.Conditions.Aggregate("", (acc, c) => acc += $" {Sql.And} {c.Name} = {c.Param} ");
-
-                sql += $"{updateStatement} {updateValues} {updateCondition}; ";
+                sql.Append($"{updateStatement} {updateValues} {updateCondition}; ");
 
                 recordIdx++;
             }
 
-            sql += $" {Sql.End};";
+            sql.Append($" {Sql.End};");
 
-            return sql;
+            return sql.ToString();
         }
 
         private string GenerateDeleteSql(QuerySchema schema)
         {
             var table = schema.Entity;
-            var fields = string.Join(FieldSeparator, schema.Fields);
+            var fields = string.Join(Separator, schema.Fields);
 
-            var sql = $"{Sql.Begin} ";
+            var sql = new StringBuilder($"{Sql.Begin} ");
 
             var deleteStatement = $"{Sql.Delete} {Sql.From} {table} {Sql.Where}";
 
@@ -158,14 +158,17 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
                 pkField.Param = CreateParameter(pkField.Name, recordIdx);
 
                 var deleteCondition = $"{pkField.Name} = {pkField.Param}";
-                sql += $"{deleteStatement} {deleteCondition}; ";
+
+                deleteCondition += ReduceSqlConditions(schema);
+
+                sql.Append($"{deleteStatement} {deleteCondition}; ");
 
                 recordIdx++;
             }
 
-            sql += $" {Sql.End};";
+            sql.Append($" {Sql.End};");
 
-            return sql;
+            return sql.ToString();
         }
 
         private string GenerateReadSql(QuerySchema schema)
@@ -183,7 +186,7 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
         private string GenerateSelectStatement(QuerySchema schema)
         {
             var table = schema.Entity;
-            var fields = string.Join(FieldSeparator, schema.Fields);
+            var fields = string.Join(Separator, schema.Fields);
 
             return $"{Sql.Select} {fields} {Sql.From} {table}";
         }
@@ -194,16 +197,31 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
             var conditionFields = schema.Conditions.Select(p => p.Name).ToList();
             var conditionParams = schema.Conditions.Select(p => CreateParameter(p.Name)).ToList();
 
-            var conditions = new StringBuilder($"{Sql.Where} ");
+            if (conditionsCount == 0)
+                return string.Empty;
+
+            var whereStatement = new StringBuilder($"{Sql.Where} ");
             for (int i = 0; i < conditionsCount; i++)
             {
-                conditions.Append($"{conditionFields[i]} = {conditionParams[i]}");
+                whereStatement.Append($"{conditionFields[i]} = {conditionParams[i]}");
 
                 if (i < conditionsCount - 1)
-                    conditions.Append($" {Sql.And} ");
+                    whereStatement.Append($" {Sql.And} ");
             }
 
-            return $"{Sql.Where} {conditions}";
+            return whereStatement.ToString();
+        }
+
+        private string ReduceSqlConditions(QuerySchema schema)
+        {
+            schema.Conditions = schema.Conditions.Select(c =>
+            {
+                c.Param = CreateParameter(c.Name);
+                return c;
+            })
+            .ToList();
+
+            return schema.Conditions.Aggregate("", (acc, c) => acc += $" {Sql.And} {c.Name} = {c.Param} ");
         }
 
         private void SanitizeAndAddValues(QuerySchema schema, SqlCommand command)
@@ -241,17 +259,20 @@ namespace Unison.Cloud.Infrastructure.Data.Adapters
                     Name = commandBuilder.QuoteIdentifier(field.Name),
                     Type = field.Type,
                     Value = field.Value
-                }).ToList();
+                })
+                .ToList();
                 return new QueryRecord()
                 {
                     Fields = fields
                 };
-            }).ToList();
+            })
+            .ToList();
             sanitizedSchema.Conditions = schema.Conditions.Select(param => new QueryParam()
             {
                 Name = commandBuilder.QuoteIdentifier(param.Name),
                 Value = param.Value,
-            }).ToList();
+            })
+            .ToList();
             return sanitizedSchema;
         }
     }

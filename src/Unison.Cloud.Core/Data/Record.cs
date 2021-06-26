@@ -38,7 +38,7 @@ namespace Unison.Cloud.Core.Data
             foreach (KeyValuePair<string, Field> field in this.Fields)
             {
                 var fieldName = field.Key;
-                if (!field.Equals(other.Fields[fieldName]))
+                if (!field.Value.Equals(other.Fields[fieldName]))
                     return false;
             }
 

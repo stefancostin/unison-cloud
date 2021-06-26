@@ -27,7 +27,7 @@ namespace Unison.Cloud.Core.Data
             if (this.Type != other.Type)
                 return false;
 
-            return Convert.ChangeType(Value, typeof(Type)) == Convert.ChangeType(other.Value, typeof(Type));
+            return Convert.ChangeType(Value, Type).Equals(Convert.ChangeType(other.Value, other.Type));
         }
     }
 }

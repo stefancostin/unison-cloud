@@ -18,9 +18,9 @@ namespace Unison.Cloud.Core.Models
 
         public string Entity { get; set; }
         public string PrimaryKey { get; set; }
-        public IEnumerable<string> Fields { get; set; }
-        public IEnumerable<QueryParam> Conditions { get; set; }
-        public IEnumerable<QueryRecord> Records { get; set; }
+        public IList<string> Fields { get; set; }
+        public IList<QueryParam> Conditions { get; set; }
+        public IList<QueryRecord> Records { get; set; }
         public QueryOperation Operation { get; set; }
     }
 
@@ -50,7 +50,7 @@ namespace Unison.Cloud.Core.Models
             Fields = new List<QueryParam>();
         }
 
-        public IEnumerable<QueryParam> Fields { get; set; }
+        public IList<QueryParam> Fields { get; set; }
     }
 
     public enum QueryOperation

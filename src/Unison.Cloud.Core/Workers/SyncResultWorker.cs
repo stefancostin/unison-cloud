@@ -43,7 +43,9 @@ namespace Unison.Cloud.Core.Workers
             QuerySchema updateSchema = message.State.Updated.ToQuerySchema(1, QueryOperation.Update);
             QuerySchema deleteSchema = message.State.Deleted.ToQuerySchema(1, QueryOperation.Delete);
 
+            int insertedRecords = _repository.Execute(insertSchema);
             int updatedRecords = _repository.Execute(updateSchema);
+            int deletedRecords = _repository.Execute(deleteSchema);
 
             Console.WriteLine("Converted to schema");
         }
