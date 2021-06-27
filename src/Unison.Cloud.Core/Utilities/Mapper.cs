@@ -178,50 +178,19 @@ namespace Unison.Cloud.Core.Utilities
 
             QuerySchema schema = new QuerySchema() {
                 Entity = amqpDataSet.Entity,
-                // TODO: Move this to something else
-                //PrimaryKey = Agent.RecordIdKey,
                 PrimaryKey = amqpDataSet.PrimaryKey,
-                // TODO: Move this to something else
-                //Operation = operation
             };
 
             if (amqpDataSet.Records == null || !amqpDataSet.Records.Any())
                 return schema;
 
             schema.Fields = amqpDataSet.Records.First().Value.Fields
-                //.Select(f => f.Value.Name == amqpDataSet.PrimaryKey ? Agent.RecordIdKey : f.Value.Name)
                 .Select(f => f.Value.Name)
                 .ToList();
+
             schema.Records = amqpDataSet.Records
                 .Select(r => r.Value?.ToQueryRecordModel())
-                // TODO: Move this to something else
-                //.Select(r =>
-                //{
-                //    r.Fields = r.Fields.Select(f => 
-                //    {
-                //        QueryParam field = new QueryParam(f);
-                //        if (f.Name == amqpDataSet.PrimaryKey)
-                //            field.Name = Agent.RecordIdKey;
-                //        return field;
-                //    })
-                //    .ToList();
-                //    return r;
-                //})
-                //.Select(r => 
-                //{
-                //    if (operation == QueryOperation.Insert)
-                //        r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId));
-                //    return r;
-                //})
                 .ToList();
-
-            // TODO: Move this to something else
-            //if (operation == QueryOperation.Insert)
-            //    schema.Fields.Add(Agent.IdKey);
-
-            // TODO: Move this to something else
-            //QueryParam agentCondition = new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId);
-            //schema.Conditions = new List<QueryParam>() { agentCondition };
 
             return schema;
         }

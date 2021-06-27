@@ -44,9 +44,11 @@ namespace Unison.Cloud.Core.Workers
             //QuerySchema updateSchema = message.State.Updated.ToQuerySchema(1, QueryOperation.Update);
             //QuerySchema deleteSchema = message.State.Deleted.ToQuerySchema(1, QueryOperation.Delete);
 
-            QuerySchema insertSchema = QuerySchemaBuilder.From(message.State.Added).ToInsertSchema(1);
-            QuerySchema updateSchema = QuerySchemaBuilder.From(message.State.Updated).ToUpdateSchema(1);
-            QuerySchema deleteSchema = QuerySchemaBuilder.From(message.State.Deleted).ToDeleteSchema(1);
+            QuerySchemaBuilder qb = new QuerySchemaBuilder(agentId: 1); 
+
+            QuerySchema insertSchema = qb.From(message.State.Added).ToInsertSchema().Build();
+            QuerySchema updateSchema = qb.From(message.State.Updated).ToUpdateSchema().Build();
+            QuerySchema deleteSchema = qb.From(message.State.Deleted).ToDeleteSchema().Build();
 
             int insertedRecords = _repository.Execute(insertSchema);
             int updatedRecords = _repository.Execute(updateSchema);

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Builders;
 using Unison.Cloud.Core.Data;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
@@ -34,14 +35,24 @@ namespace Unison.Cloud.Core.Workers
         {
             _logger.LogInformation($"Connections-Worker: Got message from agent with id: {message.Agent.AgentId}");
 
+
             // TODO: Construct the query schema from the client's database records
-            var schema = new QuerySchema()
-            {
-                Entity = "Products",
-                PrimaryKey = Agent.RecordIdKey,
-                Fields = new List<string>() { Agent.RecordIdKey, "Name", "Price" },
-                Conditions = new List<QueryParam>() { new QueryParam { Name = Agent.IdKey, Value = 1 } }
-            };
+            var qb = new QuerySchemaBuilder(agentId: 1);
+            var schema = qb
+                .From("Products")
+                .ToReadSchema()
+                .SetPrimaryKey(Agent.RecordIdKey)
+                .AddSelectFields(Agent.RecordIdKey, "Name", "Price")
+                .AddAgentCondition()
+                .Build();
+
+            //var schema = new QuerySchema()
+            //{
+            //    Entity = "Products",
+            //    PrimaryKey = Agent.RecordIdKey,
+            //    Fields = new List<string>() { Agent.RecordIdKey, "Name", "Price" },
+            //    Conditions = new List<QueryParam>() { new QueryParam { Name = Agent.IdKey, Value = 1 } }
+            //};
 
             var products = _repository.Read(schema);
 

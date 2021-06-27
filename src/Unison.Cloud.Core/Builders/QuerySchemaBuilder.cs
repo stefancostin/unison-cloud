@@ -10,69 +10,130 @@ using Unison.Common.Amqp.DTO;
 
 namespace Unison.Cloud.Core.Builders
 {
-    public static class QuerySchemaBuilder
+    public class QuerySchemaBuilder
     {
-        public static QuerySchema From(DataSet dataSet) => dataSet.ToQuerySchema();
-
-        public static QuerySchema From(AmqpDataSet amqpDataSet) => amqpDataSet.ToQuerySchema();
-
-        public static QuerySchema ToInsertSchema(this QuerySchema schema, int agentId)
+        public QuerySchemaBuilder() 
         {
-            schema.Operation = QueryOperation.Insert;
-            schema.MapAgentPkToCloudPk()
-                  .AddAgentIdField(agentId);
-            return schema;
+            Schema = new QuerySchema();
         }
 
-        public static QuerySchema ToUpdateSchema(this QuerySchema schema, int agentId)
+        public QuerySchemaBuilder(int agentId) : this()
         {
-            schema.Operation = QueryOperation.Update;
-            schema.MapAgentPkToCloudPk()
-                  .AddAgentWhereCondition(agentId);
-            return schema;
+            AgentId = agentId;
         }
 
-        public static QuerySchema ToDeleteSchema(this QuerySchema schema, int agentId)
+        public int AgentId { get; set; }
+        public QuerySchema Schema { get; set; }
+
+        public QuerySchema Build()
         {
-            schema.Operation = QueryOperation.Delete;
-            schema.MapAgentPkToCloudPk()
-                  .AddAgentWhereCondition(agentId);
-            return schema;
+            QuerySchema finalizedSchema = Schema;
+            Schema = new QuerySchema();
+            return finalizedSchema;
         }
 
-        public static QuerySchema AddAgentIdField(this QuerySchema schema, int agentId)
+        public QuerySchemaBuilder From(string entity)
         {
-            schema.Fields.Add(Agent.IdKey);
-            schema.Records = schema.Records
+            Schema = new QuerySchema() { Entity = entity };
+            return this;
+        }
+
+        public QuerySchemaBuilder From(DataSet dataSet)
+        {
+            Schema = dataSet.ToQuerySchema();
+            return this;
+        }
+
+        public QuerySchemaBuilder From(AmqpDataSet amqpDataSet)
+        {
+            Schema = amqpDataSet.ToQuerySchema();
+            return this;
+        }
+
+        public QuerySchemaBuilder ToReadSchema()
+        {
+            Schema.Operation = QueryOperation.Read;
+            return this;
+        }
+
+        public QuerySchemaBuilder ToInsertSchema()
+        {
+            Schema.Operation = QueryOperation.Insert;
+            MapAgentPkToCloudPk();
+            AddAgentIdFieldToRecords();
+            return this;
+        }
+
+        public QuerySchemaBuilder ToUpdateSchema()
+        {
+            Schema.Operation = QueryOperation.Update;
+            MapAgentPkToCloudPk();
+            AddAgentCondition();
+            return this;
+        }
+
+        public QuerySchemaBuilder ToDeleteSchema()
+        {
+            Schema.Operation = QueryOperation.Delete;
+            MapAgentPkToCloudPk();
+            AddAgentCondition();
+            return this;
+        }
+
+        public QuerySchemaBuilder AddAgentIdFieldToRecords()
+        {
+            Schema.Fields.Add(Agent.IdKey);
+            Schema.Records = Schema.Records
                 .Select(r =>
                 {
-                    r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId));
+                    r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: AgentId));
                     return r;
                 })
                 .ToList();
-            return schema;
+            return this;
         }
 
-        public static QuerySchema AddAgentWhereCondition(this QuerySchema schema, int agentId)
+        public QuerySchemaBuilder AddAgentCondition()
         {
-            QueryParam agentCondition = new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId);
-            schema.Conditions = new List<QueryParam>() { agentCondition };
-            return schema;
+            AddWhereCondition(Agent.IdKey, AgentId);
+            return this;
         }
 
-        public static QuerySchema MapAgentPkToCloudPk(this QuerySchema schema)
+        public QuerySchemaBuilder AddWhereCondition(string fieldName, object fieldValue)
         {
-            schema.Fields = schema.Fields
-                .Select(f => f == schema.PrimaryKey ? Agent.RecordIdKey : f)
+            QueryParam condition = new QueryParam { Name = fieldName, Value = fieldValue };
+            Schema.Conditions.Add(condition);
+            return this;
+        }
+
+        public QuerySchemaBuilder AddSelectFields(params string[] fields)
+        {
+            foreach (string field in fields)
+            {
+                Schema.Fields.Add(field);
+            }
+            return this;
+        }
+
+        public QuerySchemaBuilder SetPrimaryKey(string primaryKey)
+        {
+            Schema.PrimaryKey = primaryKey;
+            return this;
+        }
+
+        public QuerySchemaBuilder MapAgentPkToCloudPk()
+        {
+            Schema.Fields = Schema.Fields
+                .Select(f => f == Schema.PrimaryKey ? Agent.RecordIdKey : f)
                 .ToList();
 
-            schema.Records = schema.Records
+            Schema.Records = Schema.Records
                 .Select(r =>
                 {
                     r.Fields = r.Fields.Select(f =>
                     {
                         QueryParam field = new QueryParam(f);
-                        if (f.Name == schema.PrimaryKey)
+                        if (f.Name == Schema.PrimaryKey)
                             field.Name = Agent.RecordIdKey;
                         return field;
                     })
@@ -81,9 +142,9 @@ namespace Unison.Cloud.Core.Builders
                 })
                 .ToList();
 
-            schema.PrimaryKey = Agent.RecordIdKey;
+            Schema.PrimaryKey = Agent.RecordIdKey;
 
-            return schema;
+            return this;
         }
     }
 }
