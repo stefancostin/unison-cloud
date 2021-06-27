@@ -36,6 +36,14 @@ namespace Unison.Cloud.Core.Utilities
             return new Field(name: schemaField.Name, type: schemaField.Type, value: schemaField.Value);
         }
 
+        public static QueryParam ToQueryParamModel(this Field field)
+        {
+            if (field == null)
+                return null;
+
+            return new QueryParam(name: field.Name, type: field.Type, value: field.Value);
+        }
+
         public static QueryParam ToQueryParamModel(this AmqpField amqpField)
         {
             if (amqpField == null)
@@ -76,19 +84,34 @@ namespace Unison.Cloud.Core.Utilities
             return record;
         }
 
+        public static QueryRecord ToQueryRecordModel(this Record record)
+        {
+            if (record == null)
+                return null;
+
+            QueryRecord queryRecord = new QueryRecord();
+
+            if (record.Fields == null)
+                return queryRecord;
+
+            queryRecord.Fields = record.Fields.Select(f => f.Value?.ToQueryParamModel()).ToList();
+
+            return queryRecord;
+        }
+
         public static QueryRecord ToQueryRecordModel(this AmqpRecord amqpRecord)
         {
             if (amqpRecord == null)
                 return null;
 
-            QueryRecord record = new QueryRecord();
+            QueryRecord queryRecord = new QueryRecord();
 
             if (amqpRecord.Fields == null)
-                return record;
+                return queryRecord;
 
-            record.Fields = amqpRecord.Fields.Select(f => f.Value?.ToQueryParamModel()).ToList();
+            queryRecord.Fields = amqpRecord.Fields.Select(f => f.Value?.ToQueryParamModel()).ToList();
 
-            return record;
+            return queryRecord;
         }
         #endregion
 
@@ -123,50 +146,82 @@ namespace Unison.Cloud.Core.Utilities
             return dataSet;
         }
 
-        public static QuerySchema ToQuerySchema(this AmqpDataSet amqpDataSet, int agentId, QueryOperation operation)
+        public static QuerySchema ToQuerySchema(this DataSet dataSet)
+        {
+            if (dataSet == null)
+                return null;
+
+            QuerySchema schema = new QuerySchema()
+            {
+                Entity = dataSet.Entity,
+                PrimaryKey = dataSet.PrimaryKey,
+            };
+
+            if (dataSet.Records == null || !dataSet.Records.Any())
+                return schema;
+
+            schema.Fields = dataSet.Records.First().Value.Fields
+                .Select(f => f.Value.Name)
+                .ToList();
+
+            schema.Records = dataSet.Records
+                .Select(r => r.Value?.ToQueryRecordModel())
+                .ToList();
+
+            return schema;
+        }
+
+        public static QuerySchema ToQuerySchema(this AmqpDataSet amqpDataSet)
         {
             if (amqpDataSet == null)
                 return null;
 
             QuerySchema schema = new QuerySchema() {
                 Entity = amqpDataSet.Entity,
-                PrimaryKey = Agent.RecordIdKey,
-                Operation = operation
+                // TODO: Move this to something else
+                //PrimaryKey = Agent.RecordIdKey,
+                PrimaryKey = amqpDataSet.PrimaryKey,
+                // TODO: Move this to something else
+                //Operation = operation
             };
 
             if (amqpDataSet.Records == null || !amqpDataSet.Records.Any())
                 return schema;
 
             schema.Fields = amqpDataSet.Records.First().Value.Fields
-                .Select(f => f.Value.Name == amqpDataSet.PrimaryKey ? Agent.RecordIdKey : f.Value.Name)
+                //.Select(f => f.Value.Name == amqpDataSet.PrimaryKey ? Agent.RecordIdKey : f.Value.Name)
+                .Select(f => f.Value.Name)
                 .ToList();
             schema.Records = amqpDataSet.Records
                 .Select(r => r.Value?.ToQueryRecordModel())
-                .Select(r =>
-                {
-                    r.Fields = r.Fields.Select(f => 
-                    {
-                        QueryParam field = new QueryParam(f);
-                        if (f.Name == amqpDataSet.PrimaryKey)
-                            field.Name = Agent.RecordIdKey;
-                        return field;
-                    })
-                    .ToList();
-                    return r;
-                })
-                .Select(r => 
-                {
-                    if (operation == QueryOperation.Insert)
-                        r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId));
-                    return r;
-                })
+                // TODO: Move this to something else
+                //.Select(r =>
+                //{
+                //    r.Fields = r.Fields.Select(f => 
+                //    {
+                //        QueryParam field = new QueryParam(f);
+                //        if (f.Name == amqpDataSet.PrimaryKey)
+                //            field.Name = Agent.RecordIdKey;
+                //        return field;
+                //    })
+                //    .ToList();
+                //    return r;
+                //})
+                //.Select(r => 
+                //{
+                //    if (operation == QueryOperation.Insert)
+                //        r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId));
+                //    return r;
+                //})
                 .ToList();
 
-            if (operation == QueryOperation.Insert)
-                schema.Fields.Add(Agent.IdKey);
+            // TODO: Move this to something else
+            //if (operation == QueryOperation.Insert)
+            //    schema.Fields.Add(Agent.IdKey);
 
-            QueryParam agentCondition = new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId);
-            schema.Conditions = new List<QueryParam>() { agentCondition };
+            // TODO: Move this to something else
+            //QueryParam agentCondition = new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: agentId);
+            //schema.Conditions = new List<QueryParam>() { agentCondition };
 
             return schema;
         }

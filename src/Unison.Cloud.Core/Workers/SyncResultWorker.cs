@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Builders;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
@@ -39,9 +40,13 @@ namespace Unison.Cloud.Core.Workers
 
             // TODO: Get the agent id from an agents table based on the input received from the request
 
-            QuerySchema insertSchema = message.State.Added.ToQuerySchema(1, QueryOperation.Insert);
-            QuerySchema updateSchema = message.State.Updated.ToQuerySchema(1, QueryOperation.Update);
-            QuerySchema deleteSchema = message.State.Deleted.ToQuerySchema(1, QueryOperation.Delete);
+            //QuerySchema insertSchema = message.State.Added.ToQuerySchema(1, QueryOperation.Insert);
+            //QuerySchema updateSchema = message.State.Updated.ToQuerySchema(1, QueryOperation.Update);
+            //QuerySchema deleteSchema = message.State.Deleted.ToQuerySchema(1, QueryOperation.Delete);
+
+            QuerySchema insertSchema = QuerySchemaBuilder.From(message.State.Added).ToInsertSchema(1);
+            QuerySchema updateSchema = QuerySchemaBuilder.From(message.State.Updated).ToUpdateSchema(1);
+            QuerySchema deleteSchema = QuerySchemaBuilder.From(message.State.Deleted).ToDeleteSchema(1);
 
             int insertedRecords = _repository.Execute(insertSchema);
             int updatedRecords = _repository.Execute(updateSchema);

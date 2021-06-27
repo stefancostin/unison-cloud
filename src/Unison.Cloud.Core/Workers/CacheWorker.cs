@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unison.Cloud.Core.Data;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
@@ -44,19 +45,7 @@ namespace Unison.Cloud.Core.Workers
 
             var products = _repository.Read(schema);
 
-            // TODO: Extract this to a different service or query schema mapper + Also add the specific actions from Mapper
-            // Map agent primary key to agent record id field
-            products.Records = products.Records.Select(r =>
-            {
-                r.Value.Fields = r.Value.Fields.ToDictionary(f => f.Key == Agent.RecordIdKey ? "Id" : f.Key, f =>
-                {
-                    if (f.Value.Name == Agent.RecordIdKey)
-                        f.Value.Name = "Id";
-                    return f.Value;
-                });
-                return r;
-            })
-            .ToDictionary(r => r.Key, r => r.Value);
+            products.Records = MapAgentPrimaryKey(products, "Id");
 
             var productsCache = products.ToAmqpDataSetModel();
 
@@ -66,6 +55,21 @@ namespace Unison.Cloud.Core.Workers
             };
 
             PublishMessage(cache);
+        }
+
+        private Dictionary<string, Record> MapAgentPrimaryKey(DataSet dataSet, string primaryKey)
+        {
+            return dataSet.Records.Select(r =>
+            {
+                r.Value.Fields = r.Value.Fields.ToDictionary(f => f.Key == Agent.RecordIdKey ? primaryKey : f.Key, f =>
+                {
+                    if (f.Value.Name == Agent.RecordIdKey)
+                        f.Value.Name = primaryKey;
+                    return f.Value;
+                });
+                return r;
+            })
+            .ToDictionary(r => r.Key, r => r.Value);
         }
 
         private void PublishMessage(AmqpCache message)
