@@ -14,11 +14,11 @@ namespace Unison.Cloud.Infrastructure.Data
     /// Retrieves a database connection from the connection pool that ADO.NET
     /// creates when provided with the same connection string
     /// </summary>
-    public class WorkerDbContext : IDbContext
+    public class RawDbContext : IDbContext
     {
         private readonly IConfiguration _config;
 
-        public WorkerDbContext(IConfiguration config)
+        public RawDbContext(IConfiguration config)
         {
             _config = config;
         }

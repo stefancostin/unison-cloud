@@ -24,7 +24,7 @@ namespace Unison.Cloud.Infrastructure
         {
             services.AddDbContext<AppDbContext>();
 
-            services.AddSingleton<IDbContext, WorkerDbContext>();
+            services.AddSingleton<IDbContext, RawDbContext>();
 
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<ISQLRepository, SQLRepository>();

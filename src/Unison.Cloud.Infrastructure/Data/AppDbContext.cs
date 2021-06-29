@@ -19,6 +19,8 @@ namespace Unison.Cloud.Infrastructure.Data
         }
 
         public DbSet<Product> Products { get; set; }
+        //public DbSet<SyncEntity> SyncEntity { get; set; }
+        public DbSet<SyncLog> SyncLog { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -32,6 +34,22 @@ namespace Unison.Cloud.Infrastructure.Data
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<SyncLog>()
+                .Property(p => p.AddedRecords)
+                .HasDefaultValue(0);
+            modelBuilder.Entity<SyncLog>()
+                .Property(p => p.UpdatedRecords)
+                .HasDefaultValue(0);
+            modelBuilder.Entity<SyncLog>()
+               .Property(p => p.DeletedRecords)
+               .HasDefaultValue(0);
+            modelBuilder.Entity<SyncLog>()
+             .Property(p => p.CreatedAt)
+             .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncLog>()
+             .Property(p => p.UpdatedAt)
+             .HasDefaultValueSql("GETDATE()");
         }
     }
 }
