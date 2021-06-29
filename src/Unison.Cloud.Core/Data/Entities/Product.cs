@@ -17,6 +17,8 @@ namespace Unison.Cloud.Core.Data.Entities
 
         public int NodeId { get; set; }
 
+        public long Version { get; set; }
+
         public string Name { get; set; }
 
         public decimal Price { get; set; }

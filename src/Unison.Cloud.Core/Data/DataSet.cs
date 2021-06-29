@@ -26,6 +26,9 @@ namespace Unison.Cloud.Core.Data
             if (primaryKey == null)
                 return;
 
+            if (Records.ContainsKey(primaryKey))
+                return;
+
             Records.Add(primaryKey, record);
         }
 

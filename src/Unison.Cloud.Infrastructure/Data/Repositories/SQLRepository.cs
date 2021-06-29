@@ -38,7 +38,7 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
                 using var reader = command.ExecuteReader();
                 var readerAdapter = new DbDataReaderAdapter(reader);
-            
+
                 while (reader.HasRows)
                 {
                     while (reader.Read())
@@ -75,6 +75,45 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
                 var recordsAffected = command.ExecuteNonQuery();
 
                 return recordsAffected;
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        public Dictionary<int, int> ExecuteInTransaction(params QuerySchema[] schemas)
+        {
+            if (schemas.Length == 0)
+                return new Dictionary<int, int>();
+
+            var affectedRowsMap = new Dictionary<int, int>();
+
+            using var connection = _context.GetConnection();
+            try
+            {
+                connection.Open();
+
+                using var transaction = connection.BeginTransaction();
+                var commandAdapter = new DbCommandAdapter(connection);
+
+                try
+                {
+                    foreach (var schema in schemas)
+                    {
+                        using var command = commandAdapter.ConvertToDbCommand(schema);
+                        var affectedRows = command.ExecuteNonQuery();
+                        affectedRowsMap.Add(schema.GetHashCode(), affectedRows);
+                    }
+
+                    transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    transaction.Rollback();
+                }
+
+                return affectedRowsMap;
             }
             finally
             {

@@ -9,7 +9,6 @@ using Unison.Cloud.Core.Data;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
-using Unison.Cloud.Core.Models;
 using Unison.Cloud.Core.Utilities;
 using Unison.Common.Amqp.DTO;
 using Unison.Common.Amqp.Interfaces;
@@ -34,7 +33,6 @@ namespace Unison.Cloud.Core.Workers
         public void ProcessMessage(AmqpConnected message)
         {
             _logger.LogInformation($"Connections-Worker: Got message from agent with id: {message.Agent.AgentId}");
-
 
             // TODO: Construct the query schema from the client's database records
             var qb = new QuerySchemaBuilder(agentId: 1);

@@ -12,5 +12,6 @@ namespace Unison.Cloud.Core.Interfaces.Data
     {
         DataSet Read(QuerySchema schema);
         int Execute(QuerySchema schema);
+        Dictionary<int, int> ExecuteInTransaction(params QuerySchema[] schemas);
     }
 }
