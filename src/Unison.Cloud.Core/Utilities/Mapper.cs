@@ -121,7 +121,7 @@ namespace Unison.Cloud.Core.Utilities
             if (dataSet == null)
                 return null;
 
-            AmqpDataSet amqpDataSet = new AmqpDataSet(entity: dataSet.Entity, primaryKey: dataSet.PrimaryKey);
+            AmqpDataSet amqpDataSet = new AmqpDataSet(entity: dataSet.Entity, primaryKey: dataSet.PrimaryKey, version: dataSet.Version);
 
             if (dataSet.Records == null)
                 return amqpDataSet;
@@ -136,7 +136,7 @@ namespace Unison.Cloud.Core.Utilities
             if (amqpDataSet == null)
                 return null;
 
-            DataSet dataSet = new DataSet(entity: amqpDataSet.Entity, primaryKey: amqpDataSet.PrimaryKey);
+            DataSet dataSet = new DataSet(entity: amqpDataSet.Entity, primaryKey: amqpDataSet.PrimaryKey, version: amqpDataSet.Version);
 
             if (amqpDataSet.Records == null)
                 return dataSet;

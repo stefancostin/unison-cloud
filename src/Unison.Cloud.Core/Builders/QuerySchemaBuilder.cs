@@ -17,12 +17,6 @@ namespace Unison.Cloud.Core.Builders
             Schema = new QuerySchema();
         }
 
-        public QuerySchemaBuilder(int agentId) : this()
-        {
-            AgentId = agentId;
-        }
-
-        public int AgentId { get; set; }
         public QuerySchema Schema { get; set; }
 
         public QuerySchema Build()
@@ -60,7 +54,6 @@ namespace Unison.Cloud.Core.Builders
         {
             Schema.Operation = QueryOperation.Insert;
             MapAgentPkToCloudPk();
-            AddAgentIdFieldToRecords();
             return this;
         }
 
@@ -68,7 +61,6 @@ namespace Unison.Cloud.Core.Builders
         {
             Schema.Operation = QueryOperation.Update;
             MapAgentPkToCloudPk();
-            AddAgentCondition();
             return this;
         }
 
@@ -76,33 +68,6 @@ namespace Unison.Cloud.Core.Builders
         {
             Schema.Operation = QueryOperation.Delete;
             MapAgentPkToCloudPk();
-            AddAgentCondition();
-            return this;
-        }
-
-        public QuerySchemaBuilder AddAgentIdFieldToRecords()
-        {
-            Schema.Fields.Add(Agent.IdKey);
-            Schema.Records = Schema.Records
-                .Select(r =>
-                {
-                    r.Fields.Add(new QueryParam(name: Agent.IdKey, type: typeof(Int32), value: AgentId));
-                    return r;
-                })
-                .ToList();
-            return this;
-        }
-
-        public QuerySchemaBuilder AddAgentCondition()
-        {
-            AddWhereCondition(Agent.IdKey, AgentId);
-            return this;
-        }
-
-        public QuerySchemaBuilder AddWhereCondition(string fieldName, object fieldValue)
-        {
-            QueryParam condition = new QueryParam { Name = fieldName, Value = fieldValue };
-            Schema.Conditions.Add(condition);
             return this;
         }
 
@@ -115,9 +80,34 @@ namespace Unison.Cloud.Core.Builders
             return this;
         }
 
-        public QuerySchemaBuilder SetPrimaryKey(string primaryKey)
+        public QuerySchemaBuilder AddRecord(params QueryParam[] fields)
         {
-            Schema.PrimaryKey = primaryKey;
+            QueryRecord record = new QueryRecord();
+            foreach (QueryParam field in fields)
+            {
+                record.Fields.Add(field);
+            }
+            Schema.Records.Add(record);
+            return this;
+        }
+
+        public QuerySchemaBuilder AddWhereCondition(string fieldName, object fieldValue)
+        {
+            QueryParam condition = new QueryParam { Name = fieldName, Value = fieldValue };
+            Schema.Conditions.Add(condition);
+            return this;
+        }
+
+        public QuerySchemaBuilder MapFieldToRecords(string fieldName, object fieldValue)
+        {
+            Schema.Fields.Add(fieldName);
+            Schema.Records = Schema.Records
+                .Select(r =>
+                {
+                    r.Fields.Add(new QueryParam { Name = fieldName, Value = fieldValue });
+                    return r;
+                })
+                .ToList();
             return this;
         }
 
@@ -144,6 +134,12 @@ namespace Unison.Cloud.Core.Builders
 
             Schema.PrimaryKey = Agent.RecordIdKey;
 
+            return this;
+        }
+
+        public QuerySchemaBuilder SetPrimaryKey(string primaryKey)
+        {
+            Schema.PrimaryKey = primaryKey;
             return this;
         }
     }

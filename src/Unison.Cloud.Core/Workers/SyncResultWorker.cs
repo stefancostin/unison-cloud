@@ -1,10 +1,16 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Builders;
+using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
@@ -21,16 +27,16 @@ namespace Unison.Cloud.Core.Workers
         private readonly IAmqpConfiguration _amqpConfig;
         private readonly IAmqpPublisher _publisher;
         private readonly ISQLRepository _repository;
-        private readonly IServiceProvider _services;
         private readonly ILogger<SyncRequestWorker> _logger;
+        private readonly object _syncLock;
 
-        public SyncResultWorker(IAmqpConfiguration amqpConfig, IAmqpPublisher publisher, ISQLRepository repository, IServiceProvider services, ILogger<SyncRequestWorker> logger)
+        public SyncResultWorker(IAmqpConfiguration amqpConfig, IAmqpPublisher publisher, ISQLRepository repository, ILogger<SyncRequestWorker> logger)
         {
             _amqpConfig = amqpConfig;
             _publisher = publisher;
             _repository = repository;
-            _services = services;
             _logger = logger;
+            _syncLock = new object();
         }
 
         public void ProcessMessage(AmqpSyncResponse message)
@@ -43,24 +49,93 @@ namespace Unison.Cloud.Core.Workers
 
             ValidateMessage(message);
 
+            // TODO: Start the sync log
+            int syncLogId = 1;
+
             // TODO: Get the agent id from an agents table based on the input received from the request
-            QuerySchemaBuilder qb = new QuerySchemaBuilder(agentId: 1); 
+            int agentId = 1;
 
-            QuerySchema insertSchema = qb.From(message.State.Added).ToInsertSchema().Build();
-            QuerySchema updateSchema = qb.From(message.State.Updated).ToUpdateSchema().Build();
-            QuerySchema deleteSchema = qb.From(message.State.Deleted).ToDeleteSchema().Build();
+            QuerySchemaBuilder qb = new QuerySchemaBuilder();
 
-            // TODO: Add transaction
-            int insertedRecords = _repository.Execute(insertSchema);
-            int updatedRecords = _repository.Execute(updateSchema);
-            int deletedRecords = _repository.Execute(deleteSchema);
+            QuerySchema readVersionSchema = qb
+                .From(GetSyncEntityTableName())
+                .ToReadSchema()
+                .AddSelectFields(nameof(SyncEntity.Id), nameof(SyncEntity.Version))
+                .SetPrimaryKey(nameof(SyncEntity.Id))
+                .AddWhereCondition(nameof(SyncEntity.Entity), message.State.Entity)
+                .Build();
 
-            Console.WriteLine("Database synchronized");
+            QuerySchema insertSchema = qb
+                .From(message.State.Added)
+                .ToInsertSchema()
+                .MapFieldToRecords(Agent.IdKey, agentId)
+                .Build();
 
-            if (insertedRecords == 0 && updatedRecords == 0 && deletedRecords == 0)
-                return;
+            QuerySchema updateSchema = qb
+                .From(message.State.Updated)
+                .ToUpdateSchema()
+                .AddWhereCondition(Agent.IdKey, agentId)
+                .Build();
 
-            SynchronizeAgentCache(message.Agent.AgentId, message.State.Entity, 0);
+            QuerySchema deleteSchema = qb
+                .From(message.State.Deleted)
+                .ToDeleteSchema()
+                .AddWhereCondition(Agent.IdKey, agentId)
+                .Build();
+
+            Dictionary<int, int> affectedRowsMap = new Dictionary<int, int>();
+            long currentVersion;
+
+            lock (_syncLock)
+            {
+                DataSet entityMetadata = _repository.Read(readVersionSchema);
+                currentVersion = (long)GetCurrentEntityVersion(entityMetadata, nameof(SyncEntity.Version));
+                int entityId = (int)GetCurrentEntityVersion(entityMetadata, nameof(SyncEntity.Id));
+
+                if (currentVersion != message.State.Version)
+                    return;
+
+                long newVersion = currentVersion;
+                Interlocked.Increment(ref newVersion);
+
+                QuerySchema incrementVersionSchema = qb
+                    .From(GetSyncEntityTableName())
+                    .ToUpdateSchema()
+                    .SetPrimaryKey(nameof(SyncEntity.Id))
+                    .AddRecord(new QueryParam { Name = nameof(SyncEntity.Id), Value = entityId },
+                               new QueryParam { Name = nameof(SyncEntity.Version), Value = newVersion })
+                    .AddWhereCondition(nameof(SyncEntity.Entity), message.State.Entity)
+                    .Build();
+
+                affectedRowsMap = _repository.ExecuteInTransaction(
+                    insertSchema, updateSchema, deleteSchema, incrementVersionSchema);
+            }
+
+            _logger.LogInformation("Database synchronization complete");
+
+            int insertedRecords = affectedRowsMap.GetValueOrDefault(insertSchema.GetHashCode());
+            int updatedRecords = affectedRowsMap.GetValueOrDefault(updateSchema.GetHashCode());
+            int deletedRecords = affectedRowsMap.GetValueOrDefault(deleteSchema.GetHashCode());
+
+            LogSyncStatus(syncLogId, insertedRecords, updatedRecords, deletedRecords);
+
+            SendSynchronizeCacheCommand(message.Agent.AgentId, message.State.Entity, currentVersion);
+        }
+
+        private string GetSyncEntityTableName()
+        {
+            TableAttribute tableAttribute = (TableAttribute)Attribute.GetCustomAttribute(typeof(SyncEntity), typeof(TableAttribute));
+            return tableAttribute.Name;
+        }
+
+        private object GetCurrentEntityVersion(DataSet entityMetadata, string fieldName)
+        {
+            return entityMetadata.Records.First().Value.Fields.Values.First(f => f.Name == fieldName).Value;
+        }
+
+        private void LogSyncStatus(int syncLogId, int insertedRecords, int updatedRecords, int deletedRecords)
+        {
+            // Update the sync log
         }
 
         private void ValidateMessage(AmqpSyncResponse message)
@@ -71,11 +146,11 @@ namespace Unison.Cloud.Core.Workers
             if (string.IsNullOrWhiteSpace(message.State.Entity))
                 throw new InvalidRequestException("An entity name must be provided");
 
-            if (message.State.IsEmpty())
-                throw new InvalidRequestException("The synchronization state cannot be empty");
+            //if (message.State.IsEmpty())
+            //    throw new InvalidRequestException("The synchronization state cannot be empty");
         }
 
-        private void SynchronizeAgentCache(string agentId, string entity, long version)
+        private void SendSynchronizeCacheCommand(string agentId, string entity, long version)
         {
             AmqpApplyVersion message = new AmqpApplyVersion()
             {

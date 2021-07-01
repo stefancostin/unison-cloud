@@ -7,10 +7,10 @@ using Unison.Cloud.Core.Data.Entities;
 
 namespace Unison.Cloud.Core.Interfaces.Data
 {
-    public interface IProductRepository
+    public interface ISyncEntityRepository
     {
-        Task<IEnumerable<Product>> GetAllAsync();
-        IEnumerable<Product> GetAll();
-        void Add(Product product);
+        SyncEntity Find(int id);
+        Task<IEnumerable<SyncEntity>> GetAllAsync();
+        IEnumerable<SyncEntity> GetAll();
     }
 }

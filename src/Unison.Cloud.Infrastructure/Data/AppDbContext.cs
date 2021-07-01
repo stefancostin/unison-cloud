@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Innofactor.EfCoreJsonValueConverter;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace Unison.Cloud.Infrastructure.Data
         }
 
         public DbSet<Product> Products { get; set; }
-        //public DbSet<SyncEntity> SyncEntity { get; set; }
+        public DbSet<SyncEntity> SyncEntities { get; set; }
         public DbSet<SyncLog> SyncLog { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -34,6 +35,16 @@ namespace Unison.Cloud.Infrastructure.Data
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<SyncEntity>()
+                .Property(p => p.NodeId)
+                .HasDefaultValue(1);
+            modelBuilder.Entity<SyncEntity>()
+                .Property(p => p.Version)
+                .HasDefaultValue(1);
+            modelBuilder.Entity<SyncEntity>()
+                .Property(p => p.Schema)
+                .HasJsonValueConversion();
 
             modelBuilder.Entity<SyncLog>()
                 .Property(p => p.AddedRecords)

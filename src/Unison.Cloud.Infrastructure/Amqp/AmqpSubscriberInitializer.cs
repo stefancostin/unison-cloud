@@ -41,7 +41,6 @@ namespace Unison.Cloud.Infrastructure.Amqp
             }
         }
 
-
         private IAmqpSubscriber InitializeConnectionsSubscriber(IServiceScope scope)
         {
             var connectionsWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker<AmqpConnected>>();

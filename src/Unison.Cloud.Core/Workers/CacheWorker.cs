@@ -1,14 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Builders;
 using Unison.Cloud.Core.Data;
+using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
+using Unison.Cloud.Core.Models;
 using Unison.Cloud.Core.Utilities;
 using Unison.Common.Amqp.DTO;
 using Unison.Common.Amqp.Interfaces;
@@ -17,16 +21,18 @@ namespace Unison.Cloud.Core.Workers
 {
     public class CacheWorker : ISubscriptionWorker<AmqpConnected>
     {
-        private readonly ISQLRepository _repository;
         private readonly IAmqpConfiguration _amqpConfig;
         private readonly IAmqpPublisher _publisher;
+        private readonly ISQLRepository _repository;
+        private readonly ServicesContext _servicesContext;
         private readonly ILogger<CacheWorker> _logger;
 
-        public CacheWorker(ISQLRepository repository, IAmqpConfiguration amqpConfig, IAmqpPublisher publisher, ILogger<CacheWorker> logger)
+        public CacheWorker(ISQLRepository repository, IAmqpConfiguration amqpConfig, IAmqpPublisher publisher, ServicesContext servicesContext, ILogger<CacheWorker> logger)
         {
             _repository = repository;
             _amqpConfig = amqpConfig;
             _publisher = publisher;
+            _servicesContext = servicesContext;
             _logger = logger;
         }
 
@@ -34,29 +40,25 @@ namespace Unison.Cloud.Core.Workers
         {
             _logger.LogInformation($"Connections-Worker: Got message from agent with id: {message.Agent.AgentId}");
 
+            IEnumerable<SyncEntity> entities = GetEntityMetadata();
+            SyncEntity productEntity = entities.First();
+
             // TODO: Construct the query schema from the client's database records
-            var qb = new QuerySchemaBuilder(agentId: 1);
+            var agentId = 1;
+            var qb = new QuerySchemaBuilder();
             var schema = qb
                 .From("Products")
                 .ToReadSchema()
                 .SetPrimaryKey(Agent.RecordIdKey)
                 .AddSelectFields(Agent.RecordIdKey, "Name", "Price")
-                .AddAgentCondition()
+                .AddWhereCondition(Agent.IdKey, agentId)
                 .Build();
 
-            //var schema = new QuerySchema()
-            //{
-            //    Entity = "Products",
-            //    PrimaryKey = Agent.RecordIdKey,
-            //    Fields = new List<string>() { Agent.RecordIdKey, "Name", "Price" },
-            //    Conditions = new List<QueryParam>() { new QueryParam { Name = Agent.IdKey, Value = 1 } }
-            //};
-
-            var products = _repository.Read(schema);
-
+            DataSet products = _repository.Read(schema);
+            products.Version = productEntity.Version;
             products.Records = MapAgentPrimaryKey(products, "Id");
 
-            var productsCache = products.ToAmqpDataSetModel();
+            AmqpDataSet productsCache = products.ToAmqpDataSetModel();
 
             var cache = new AmqpCache()
             {
@@ -64,6 +66,15 @@ namespace Unison.Cloud.Core.Workers
             };
 
             PublishMessage(cache);
+        }
+
+        private IEnumerable<SyncEntity> GetEntityMetadata()
+        {
+            using (var scope = _servicesContext.Services.CreateScope())
+            {
+                var entityRepository = scope.ServiceProvider.GetRequiredService<ISyncEntityRepository>();
+                return entityRepository.GetAll();
+            }
         }
 
         private Dictionary<string, Record> MapAgentPrimaryKey(DataSet dataSet, string primaryKey)

@@ -87,6 +87,11 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             if (schemas.Length == 0)
                 return new Dictionary<int, int>();
 
+            IList<QuerySchema> schemaList = new List<QuerySchema>(schemas)
+                .Where(s => s.Operation != QueryOperation.Read)
+                .Where(s => s.Records.Any())
+                .ToList();
+
             var affectedRowsMap = new Dictionary<int, int>();
 
             using var connection = _context.GetConnection();
@@ -99,9 +104,12 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
                 try
                 {
-                    foreach (var schema in schemas)
+                    foreach (QuerySchema schema in schemaList)
                     {
-                        using var command = commandAdapter.ConvertToDbCommand(schema);
+                        var command = commandAdapter.ConvertToDbCommand(schema);
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+
                         var affectedRows = command.ExecuteNonQuery();
                         affectedRowsMap.Add(schema.GetHashCode(), affectedRows);
                     }

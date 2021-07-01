@@ -24,11 +24,12 @@ namespace Unison.Cloud.Infrastructure
 
         public static void AddCoreServices(this IServiceCollection services)
         {
-            // We'll probably have to add these jobs from a database.
-            services.AddTransient<ITimedWorker, SyncRequestWorker>();
+            services.AddSingleton<ServicesContext>();
 
             services.AddScoped<ISubscriptionWorker<AmqpSyncResponse>, SyncResultWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();
+
+            services.AddTransient<ITimedWorker, SyncRequestWorker>();
 
             services.AddHostedService<TimedServiceManager>();
             services.AddHostedService<AmqpServiceManager>();
