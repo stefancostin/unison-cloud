@@ -20,6 +20,7 @@ namespace Unison.Cloud.Infrastructure.Data
         }
 
         public DbSet<Product> Products { get; set; }
+        public DbSet<SyncAgent> SyncAgent { get; set; }
         public DbSet<SyncEntity> SyncEntities { get; set; }
         public DbSet<SyncLog> SyncLog { get; set; }
 
@@ -36,6 +37,13 @@ namespace Unison.Cloud.Infrastructure.Data
                 .Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
 
+            modelBuilder.Entity<SyncAgent>()
+                .Property(p => p.NodeId)
+                .HasDefaultValue(1);
+            modelBuilder.Entity<SyncAgent>()
+                 .HasIndex(p => p.InstanceId)
+                 .IsUnique();
+        
             modelBuilder.Entity<SyncEntity>()
                 .Property(p => p.NodeId)
                 .HasDefaultValue(1);

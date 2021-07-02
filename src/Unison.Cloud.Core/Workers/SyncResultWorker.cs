@@ -42,7 +42,7 @@ namespace Unison.Cloud.Core.Workers
         public void ProcessMessage(AmqpSyncResponse message)
         {
             _logger.LogInformation(
-                $"Got message from agent: {message.Agent.AgentId}." +
+                $"Received message from agent: {message.Agent.InstanceId}." +
                 $" Added: {message.State.Added.Records.Count}," +
                 $" Updated: {message.State.Updated.Records.Count}," +
                 $" Deleted: {message.State.Deleted.Records.Count}.");
@@ -119,7 +119,7 @@ namespace Unison.Cloud.Core.Workers
 
             LogSyncStatus(syncLogId, insertedRecords, updatedRecords, deletedRecords);
 
-            SendSynchronizeCacheCommand(message.Agent.AgentId, message.State.Entity, currentVersion);
+            SendSynchronizeCacheCommand(message.Agent.InstanceId, message.State.Entity, currentVersion);
         }
 
         private string GetSyncEntityTableName()
@@ -150,7 +150,7 @@ namespace Unison.Cloud.Core.Workers
             //    throw new InvalidRequestException("The synchronization state cannot be empty");
         }
 
-        private void SendSynchronizeCacheCommand(string agentId, string entity, long version)
+        private void SendSynchronizeCacheCommand(string instanceId, string entity, long version)
         {
             AmqpApplyVersion message = new AmqpApplyVersion()
             {
@@ -160,7 +160,7 @@ namespace Unison.Cloud.Core.Workers
 
             string exchange = _amqpConfig.Exchanges.Commands;
             string command = _amqpConfig.Commands.ApplyVersion;
-            string routingKey = $"{exchange}.{command}.{agentId}";
+            string routingKey = $"{exchange}.{command}.{instanceId}";
 
             _publisher.PublishMessage(message, exchange, routingKey);
         }

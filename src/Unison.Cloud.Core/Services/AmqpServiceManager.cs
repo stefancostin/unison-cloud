@@ -61,6 +61,11 @@ namespace Unison.Cloud.Core.Services
             }
         }
 
+        /// <summary>
+        /// This method initiates the communication with the synchronization agents.
+        /// It sends a global reconnect command to all agents, that will in turn react with a connection response containing their agent id.
+        /// Upon receiving the connection command and the agent id, the cloud server can send the cache command to each agent.
+        /// </summary>
         private void SendInitialReconnectCommand()
         {
             using (var scope = _services.CreateScope())

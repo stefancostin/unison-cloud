@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Unison.Cloud.Core.Builders;
 using Unison.Cloud.Core.Data;
 using Unison.Cloud.Core.Data.Entities;
+using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
@@ -38,42 +39,44 @@ namespace Unison.Cloud.Core.Workers
 
         public void ProcessMessage(AmqpConnected message)
         {
-            _logger.LogInformation($"Connections-Worker: Got message from agent with id: {message.Agent.AgentId}");
+            ValidateMessage(message);
 
-            IEnumerable<SyncEntity> entities = GetEntityMetadata();
-            SyncEntity productEntity = entities.First();
+            _logger.LogInformation($"Received message from agent: {message.Agent.InstanceId}");
 
-            // TODO: Construct the query schema from the client's database records
-            var agentId = 1;
-            var qb = new QuerySchemaBuilder();
-            var schema = qb
-                .From("Products")
-                .ToReadSchema()
-                .SetPrimaryKey(Agent.RecordIdKey)
-                .AddSelectFields(Agent.RecordIdKey, "Name", "Price")
-                .AddWhereCondition(Agent.IdKey, agentId)
-                .Build();
+            SyncAgent agent = GetAgentInformation(message.Agent.InstanceId);
 
-            DataSet products = _repository.Read(schema);
-            products.Version = productEntity.Version;
-            products.Records = MapAgentPrimaryKey(products, "Id");
+            if (agent == null)
+                throw new AgentNotFoundException("An agent with the provided instance id does not exist");
 
-            AmqpDataSet productsCache = products.ToAmqpDataSetModel();
+            List<SyncEntity> entities = GetEntitiesMetadata(agent.NodeId);
 
-            var cache = new AmqpCache()
+            if (!entities.Any())
             {
-                Entities = new List<AmqpDataSet> { productsCache }
-            };
+                _logger.LogInformation($"No synchronizable entities have been defined for agent: {message.Agent.InstanceId}");
+                return;
+            }
 
-            PublishMessage(cache);
+            List<DataSet> entitiesCache = RetrieveEntitiesAndPrepareCache(entities, agent);
+
+            AmqpCache cacheMessage = MapEntitiesCacheToResponseModel(entitiesCache);
+            SendCache(cacheMessage);
         }
 
-        private IEnumerable<SyncEntity> GetEntityMetadata()
+        private SyncAgent GetAgentInformation(string instanceId)
+        {
+            using (var scope = _servicesContext.Services.CreateScope())
+            {
+                var agentRepository = scope.ServiceProvider.GetRequiredService<ISyncAgentRepository>();
+                return agentRepository.FindByInstanceId(instanceId);
+            }
+        }
+
+        private List<SyncEntity> GetEntitiesMetadata(int nodeId)
         {
             using (var scope = _servicesContext.Services.CreateScope())
             {
                 var entityRepository = scope.ServiceProvider.GetRequiredService<ISyncEntityRepository>();
-                return entityRepository.GetAll();
+                return entityRepository.FindByNodeId(nodeId).ToList();
             }
         }
 
@@ -92,13 +95,56 @@ namespace Unison.Cloud.Core.Workers
             .ToDictionary(r => r.Key, r => r.Value);
         }
 
-        private void PublishMessage(AmqpCache message)
+        private AmqpCache MapEntitiesCacheToResponseModel(List<DataSet> entitiesCache)
+        {
+            return new AmqpCache()
+            {
+                Entities = entitiesCache.Select(e => e.ToAmqpDataSetModel()).ToList()
+            };
+        }
+
+        private List<DataSet> RetrieveEntitiesAndPrepareCache(List<SyncEntity> entities, SyncAgent agent)
+        {
+            List<DataSet> entitiesCache = new List<DataSet>();
+            QuerySchemaBuilder qb = new QuerySchemaBuilder();
+
+            foreach (SyncEntity entity in entities)
+            {
+                // TODO: Construct the query schema from the client's database records
+                var schema = qb
+                    .From("Products") // entity.Entity
+                    .ToReadSchema()
+                    .SetPrimaryKey(Agent.RecordIdKey)
+                    .AddSelectFields(Agent.RecordIdKey, "Name", "Price")
+                    .AddWhereCondition(Agent.IdKey, agent.Id)
+                    .Build();
+
+                DataSet cache = _repository.Read(schema);
+                cache.Version = entity.Version;
+                cache.Records = MapAgentPrimaryKey(cache, "Id"); // entity.PrimaryKey
+
+                entitiesCache.Add(cache);
+            }
+
+            return entitiesCache;
+        }
+
+        private void SendCache(AmqpCache message)
         {
             var exchange = _amqpConfig.Exchanges.Commands;
             var command = _amqpConfig.Commands.Cache;
             var routingKey = $"{exchange}.{command}";
 
             _publisher.PublishMessage(message, exchange, routingKey);
+        }
+
+        private void ValidateMessage(AmqpConnected message)
+        {
+            if (message == null || message.Agent == null)
+                throw new InvalidRequestException("A connection/cache request cannot be empty");
+
+            if (string.IsNullOrWhiteSpace(message.Agent.InstanceId))
+                throw new InvalidRequestException("An agent instance id must be provided");
         }
     }
 }
