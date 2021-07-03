@@ -41,7 +41,10 @@ namespace Unison.Cloud.Core.Workers
         {
             ValidateMessage(message);
 
-            _logger.LogInformation($"Received message from agent: {message.Agent.InstanceId}");
+            string correlationId = Guid.NewGuid().ToString();
+
+            _logger.LogInformation($"CorrelationId: {correlationId}. " +
+                $"Received message from agent: {message.Agent.InstanceId}.");
 
             SyncAgent agent = GetAgentInformation(message.Agent.InstanceId);
 
@@ -52,13 +55,17 @@ namespace Unison.Cloud.Core.Workers
 
             if (!entities.Any())
             {
-                _logger.LogInformation($"No synchronizable entities have been defined for agent: {message.Agent.InstanceId}");
+                _logger.LogWarning($"CorrelationId: {correlationId}. " +
+                    $"No synchronizable entities have been defined for agent: {message.Agent.InstanceId}.");
                 return;
             }
 
             List<DataSet> entitiesCache = RetrieveEntitiesAndPrepareCache(entities, agent);
 
-            AmqpCache cacheMessage = MapEntitiesCacheToResponseModel(entitiesCache);
+            _logger.LogInformation($"CorrelationId: {correlationId}. " +
+                $"{entitiesCache.Count} entities are sent to be cached by agent: {message.Agent.InstanceId}.");
+
+            AmqpCache cacheMessage = MapEntitiesCacheToResponseModel(entitiesCache, correlationId);
             SendCache(cacheMessage);
         }
 
@@ -95,10 +102,11 @@ namespace Unison.Cloud.Core.Workers
             .ToDictionary(r => r.Key, r => r.Value);
         }
 
-        private AmqpCache MapEntitiesCacheToResponseModel(List<DataSet> entitiesCache)
+        private AmqpCache MapEntitiesCacheToResponseModel(List<DataSet> entitiesCache, string correlationId)
         {
             return new AmqpCache()
             {
+                CorrelationId = correlationId,
                 Entities = entitiesCache.Select(e => e.ToAmqpDataSetModel()).ToList()
             };
         }
@@ -131,6 +139,7 @@ namespace Unison.Cloud.Core.Workers
 
         private void SendCache(AmqpCache message)
         {
+
             var exchange = _amqpConfig.Exchanges.Commands;
             var command = _amqpConfig.Commands.Cache;
             var routingKey = $"{exchange}.{command}";
