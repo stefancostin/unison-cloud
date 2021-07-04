@@ -25,32 +25,44 @@ namespace Unison.Cloud.Core.Workers
     public class SyncResultWorker : ISubscriptionWorker<AmqpSyncResponse>
     {
         private readonly IAmqpConfiguration _amqpConfig;
+        private readonly ILogger<SyncRequestWorker> _logger;
         private readonly IAmqpPublisher _publisher;
         private readonly ISQLRepository _repository;
-        private readonly ILogger<SyncRequestWorker> _logger;
+        private readonly ServicesContext _servicesContext;
         private readonly object _syncLock;
 
-        public SyncResultWorker(IAmqpConfiguration amqpConfig, IAmqpPublisher publisher, ISQLRepository repository, ILogger<SyncRequestWorker> logger)
+        public SyncResultWorker(
+            IAmqpConfiguration amqpConfig,
+            ILogger<SyncRequestWorker> logger,
+            IAmqpPublisher publisher,
+            ISQLRepository repository,
+            ServicesContext servicesContext)
         {
             _amqpConfig = amqpConfig;
             _publisher = publisher;
-            _repository = repository;
             _logger = logger;
+            _repository = repository;
+            _servicesContext = servicesContext;
             _syncLock = new object();
         }
 
         public void ProcessMessage(AmqpSyncResponse message)
         {
-            _logger.LogInformation(
-                $"Received message from agent: {message.Agent.InstanceId}." +
-                $" Added: {message.State.Added.Records.Count}," +
-                $" Updated: {message.State.Updated.Records.Count}," +
-                $" Deleted: {message.State.Deleted.Records.Count}.");
-
             ValidateMessage(message);
 
-            // TODO: Start the sync log
-            int syncLogId = 1;
+            string correlationId = message.CorrelationId;
+
+            _logger.LogInformation($"CorrelationId: {correlationId}. " +
+                $"Received message from agent: {message.Agent.InstanceId}. " +
+                $"Added: {message.State.Added.Records.Count}, " +
+                $"Updated: {message.State.Updated.Records.Count}, " +
+                $"Deleted: {message.State.Deleted.Records.Count}.");
+
+            if (message.State.IsEmpty())
+            {
+                LogSyncStatus(correlationId);
+                return;
+            }
 
             // TODO: Get the agent id from an agents table based on the input received from the request
             int agentId = 1;
@@ -111,13 +123,13 @@ namespace Unison.Cloud.Core.Workers
                     insertSchema, updateSchema, deleteSchema, incrementVersionSchema);
             }
 
-            _logger.LogInformation("Database synchronization complete");
+            _logger.LogDebug($"CorrelationId: {correlationId}. Database synchronization complete.");
 
             int insertedRecords = affectedRowsMap.GetValueOrDefault(insertSchema.GetHashCode());
             int updatedRecords = affectedRowsMap.GetValueOrDefault(updateSchema.GetHashCode());
             int deletedRecords = affectedRowsMap.GetValueOrDefault(deleteSchema.GetHashCode());
 
-            LogSyncStatus(syncLogId, insertedRecords, updatedRecords, deletedRecords);
+            LogSyncStatus(correlationId, insertedRecords, updatedRecords, deletedRecords);
 
             SendSynchronizeCacheCommand(message.Agent.InstanceId, message.State.Entity, currentVersion);
         }
@@ -133,9 +145,27 @@ namespace Unison.Cloud.Core.Workers
             return entityMetadata.Records.First().Value.Fields.Values.First(f => f.Name == fieldName).Value;
         }
 
-        private void LogSyncStatus(int syncLogId, int insertedRecords, int updatedRecords, int deletedRecords)
+        private void LogSyncStatus(string correlationId, int addedRecords = 0, int updatedRecords = 0, int deletedRecords = 0)
         {
-            // Update the sync log
+            using (var scope = _servicesContext.Services.CreateScope())
+            {
+                var syncLogRepository = scope.ServiceProvider.GetRequiredService<ISyncLogRepository>();
+                SyncLog syncLog = syncLogRepository.FindByCorrelationId(correlationId);
+
+                if (syncLog == null)
+                {
+                    _logger.LogWarning($"CorrelationId: {correlationId}. Sync log initialized during sync request not found.");
+                    return;
+                }
+
+                syncLog.AddedRecords = addedRecords;
+                syncLog.UpdatedRecords = updatedRecords;
+                syncLog.DeletedRecords = deletedRecords;
+                syncLog.UpdatedAt = DateTime.Now;
+                syncLog.Completed = true;
+
+                syncLogRepository.SaveChanges();
+            }
         }
 
         private void ValidateMessage(AmqpSyncResponse message)
@@ -145,9 +175,6 @@ namespace Unison.Cloud.Core.Workers
 
             if (string.IsNullOrWhiteSpace(message.State.Entity))
                 throw new InvalidRequestException("An entity name must be provided");
-
-            //if (message.State.IsEmpty())
-            //    throw new InvalidRequestException("The synchronization state cannot be empty");
         }
 
         private void SendSynchronizeCacheCommand(string instanceId, string entity, long version)

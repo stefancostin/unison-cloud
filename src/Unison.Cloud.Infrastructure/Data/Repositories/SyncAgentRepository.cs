@@ -10,35 +10,35 @@ using Unison.Cloud.Core.Interfaces.Data;
 
 namespace Unison.Cloud.Infrastructure.Data.Repositories
 {
-    public class SyncEntityRepository : ISyncEntityRepository
+    public class SyncAgentRepository : ISyncAgentRepository
     {
         private readonly AppDbContext _context;
         private readonly ILogger<SyncEntityRepository> _logger;
 
-        public SyncEntityRepository(AppDbContext context, ILogger<SyncEntityRepository> logger)
+        public SyncAgentRepository(AppDbContext context, ILogger<SyncEntityRepository> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        public SyncEntity Find(int id)
+        public SyncAgent Find(int id)
         {
-            return _context.SyncEntities.Find(id);
+            return _context.SyncAgent.Find(id);
         }
 
-        public IEnumerable<SyncEntity> FindByNodeId(int nodeId)
+        public SyncAgent FindByInstanceId(string instanceId)
         {
-            return _context.SyncEntities.Where(e => e.NodeId == nodeId).ToList();
+            return _context.SyncAgent.Where(e => e.InstanceId == instanceId).FirstOrDefault();
         }
 
-        public IEnumerable<SyncEntity> GetAll()
+        public IEnumerable<SyncAgent> GetAll()
         {
-            return _context.SyncEntities.ToList();
+            return _context.SyncAgent.ToList();
         }
 
-        public async Task<IEnumerable<SyncEntity>> GetAllAsync()
+        public async Task<IEnumerable<SyncAgent>> GetAllAsync()
         {
-            return await _context.SyncEntities.ToListAsync();
+            return await _context.SyncAgent.ToListAsync();
         }
     }
 }

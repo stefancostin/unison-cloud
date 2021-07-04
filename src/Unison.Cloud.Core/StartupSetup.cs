@@ -25,6 +25,7 @@ namespace Unison.Cloud.Infrastructure
         public static void AddCoreServices(this IServiceCollection services)
         {
             services.AddSingleton<ServicesContext>();
+            services.AddSingleton<ConnectionsManager>();
 
             services.AddScoped<ISubscriptionWorker<AmqpSyncResponse>, SyncResultWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();

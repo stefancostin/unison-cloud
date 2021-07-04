@@ -28,7 +28,7 @@ namespace Unison.Cloud.Core.Services
             using (var scope = _services.CreateScope())
             {
                 var syncRequestWorker = scope.ServiceProvider.GetRequiredService<ITimedWorker>();
-                _timer = new Timer(syncRequestWorker.Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+                _timer = new Timer(syncRequestWorker.Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(15));
             }
             return Task.CompletedTask;
         }

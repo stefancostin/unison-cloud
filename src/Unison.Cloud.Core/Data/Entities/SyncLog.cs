@@ -12,6 +12,7 @@ namespace Unison.Cloud.Core.Data.Entities
     {
         public int Id { get; set; }
         public string CorrelationId { get; set; }
+        public int AgentId { get; set; }
         public string Entity { get; set; }
         public int AddedRecords { get; set; }
         public int UpdatedRecords { get; set; }

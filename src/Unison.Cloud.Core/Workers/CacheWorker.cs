@@ -14,6 +14,7 @@ using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Core.Interfaces.Workers;
 using Unison.Cloud.Core.Models;
+using Unison.Cloud.Core.Services;
 using Unison.Cloud.Core.Utilities;
 using Unison.Common.Amqp.DTO;
 using Unison.Common.Amqp.Interfaces;
@@ -23,16 +24,24 @@ namespace Unison.Cloud.Core.Workers
     public class CacheWorker : ISubscriptionWorker<AmqpConnected>
     {
         private readonly IAmqpConfiguration _amqpConfig;
+        private readonly ConnectionsManager _connectionsManager;
         private readonly IAmqpPublisher _publisher;
         private readonly ISQLRepository _repository;
         private readonly ServicesContext _servicesContext;
         private readonly ILogger<CacheWorker> _logger;
 
-        public CacheWorker(ISQLRepository repository, IAmqpConfiguration amqpConfig, IAmqpPublisher publisher, ServicesContext servicesContext, ILogger<CacheWorker> logger)
+        public CacheWorker(
+            IAmqpConfiguration amqpConfig, 
+            ConnectionsManager connectionsManager,
+            IAmqpPublisher publisher, 
+            ISQLRepository repository, 
+            ServicesContext servicesContext, 
+            ILogger<CacheWorker> logger)
         {
-            _repository = repository;
             _amqpConfig = amqpConfig;
+            _connectionsManager = connectionsManager;
             _publisher = publisher;
+            _repository = repository;
             _servicesContext = servicesContext;
             _logger = logger;
         }
@@ -46,12 +55,9 @@ namespace Unison.Cloud.Core.Workers
             _logger.LogInformation($"CorrelationId: {correlationId}. " +
                 $"Received message from agent: {message.Agent.InstanceId}.");
 
-            SyncAgent agent = GetAgentInformation(message.Agent.InstanceId);
+            ConnectedInstance connectedInstance = _connectionsManager.ProcessInstance(message.Agent.InstanceId, correlationId);
 
-            if (agent == null)
-                throw new AgentNotFoundException("An agent with the provided instance id does not exist");
-
-            List<SyncEntity> entities = GetEntitiesMetadata(agent.NodeId);
+            List<SyncEntity> entities = GetEntitiesMetadata(connectedInstance.NodeId);
 
             if (!entities.Any())
             {
@@ -60,22 +66,13 @@ namespace Unison.Cloud.Core.Workers
                 return;
             }
 
-            List<DataSet> entitiesCache = RetrieveEntitiesAndPrepareCache(entities, agent);
+            List<DataSet> entitiesCache = RetrieveEntitiesAndPrepareCache(entities, connectedInstance.AgentId);
 
             _logger.LogInformation($"CorrelationId: {correlationId}. " +
                 $"{entitiesCache.Count} entities are sent to be cached by agent: {message.Agent.InstanceId}.");
 
             AmqpCache cacheMessage = MapEntitiesCacheToResponseModel(entitiesCache, correlationId);
-            SendCache(cacheMessage);
-        }
-
-        private SyncAgent GetAgentInformation(string instanceId)
-        {
-            using (var scope = _servicesContext.Services.CreateScope())
-            {
-                var agentRepository = scope.ServiceProvider.GetRequiredService<ISyncAgentRepository>();
-                return agentRepository.FindByInstanceId(instanceId);
-            }
+            SendCache(cacheMessage, connectedInstance.InstanceId);
         }
 
         private List<SyncEntity> GetEntitiesMetadata(int nodeId)
@@ -111,7 +108,7 @@ namespace Unison.Cloud.Core.Workers
             };
         }
 
-        private List<DataSet> RetrieveEntitiesAndPrepareCache(List<SyncEntity> entities, SyncAgent agent)
+        private List<DataSet> RetrieveEntitiesAndPrepareCache(List<SyncEntity> entities, int agentId)
         {
             List<DataSet> entitiesCache = new List<DataSet>();
             QuerySchemaBuilder qb = new QuerySchemaBuilder();
@@ -124,7 +121,7 @@ namespace Unison.Cloud.Core.Workers
                     .ToReadSchema()
                     .SetPrimaryKey(Agent.RecordIdKey)
                     .AddSelectFields(Agent.RecordIdKey, "Name", "Price")
-                    .AddWhereCondition(Agent.IdKey, agent.Id)
+                    .AddWhereCondition(Agent.IdKey, agentId)
                     .Build();
 
                 DataSet cache = _repository.Read(schema);
@@ -137,12 +134,13 @@ namespace Unison.Cloud.Core.Workers
             return entitiesCache;
         }
 
-        private void SendCache(AmqpCache message)
+        private void SendCache(AmqpCache message, string instanceId)
         {
 
             var exchange = _amqpConfig.Exchanges.Commands;
             var command = _amqpConfig.Commands.Cache;
-            var routingKey = $"{exchange}.{command}";
+
+            var routingKey = $"{exchange}.{command}.{instanceId}";
 
             _publisher.PublishMessage(message, exchange, routingKey);
         }
