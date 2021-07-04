@@ -25,8 +25,8 @@ namespace Unison.Cloud.Core.Workers
         private readonly ILogger<SyncRequestWorker> _logger;
 
         public SyncRequestWorker(
-            IAmqpConfiguration amqpConfig, 
-            ConnectionsManager connectionsManager, 
+            IAmqpConfiguration amqpConfig,
+            ConnectionsManager connectionsManager,
             IAmqpPublisher publisher,
             ServicesContext servicesContext,
             ILogger<SyncRequestWorker> logger)
@@ -66,14 +66,14 @@ namespace Unison.Cloud.Core.Workers
                         CorrelationId = correlationId
                     };
 
-                    SyncLog initialRequestLog = new SyncLog()
+                    SyncLog initialSyncRequestLog = new SyncLog()
                     {
                         AgentId = connectedInstance.AgentId,
                         Completed = false,
                         CorrelationId = correlationId,
                         Entity = entity.Entity,
                     };
-                    syncLog.Add(initialRequestLog);
+                    syncLog.Add(initialSyncRequestLog);
 
                     SendSyncRequest(syncRequest, connectedInstance.InstanceId);
                 }
