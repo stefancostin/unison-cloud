@@ -30,11 +30,13 @@ namespace Unison.Cloud.Infrastructure.Amqp
             using (var scope = _services.CreateScope())
             {
                 var connectionsSubscriber = InitializeConnectionsSubscriber(scope);
+                var heartbeatSubscriber = InitializeHeartbeatSubscriber(scope);
                 var syncResultSubscriber = InitializeSyncResultsSubscriber(scope);
 
                 var subscribers = new List<IAmqpSubscriber>();
 
                 subscribers.Add(connectionsSubscriber);
+                subscribers.Add(heartbeatSubscriber);
                 subscribers.Add(syncResultSubscriber);
 
                 return subscribers;
@@ -46,6 +48,13 @@ namespace Unison.Cloud.Infrastructure.Amqp
             var connectionsWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker<AmqpConnected>>();
             var queue = _amqpConfig.Queues.Connections;
             return _subscriberFactory.CreateSubscriber(queue, connectionsWorker);
+        }
+
+        private IAmqpSubscriber InitializeHeartbeatSubscriber(IServiceScope scope)
+        {
+            var heartbeatWorker = scope.ServiceProvider.GetRequiredService<ISubscriptionWorker<AmqpHeartbeat>>();
+            var queue = _amqpConfig.Queues.Heartbeat;
+            return _subscriberFactory.CreateSubscriber(queue, heartbeatWorker);
         }
 
         private IAmqpSubscriber InitializeSyncResultsSubscriber(IServiceScope scope)

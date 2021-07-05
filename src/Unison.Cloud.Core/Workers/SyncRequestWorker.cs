@@ -38,7 +38,7 @@ namespace Unison.Cloud.Core.Workers
             _logger = logger;
         }
 
-        public void Execute(object state)
+        public void Start(object state)
         {
             if (_connectionsManager.ConnectedInstances.IsEmpty)
             {

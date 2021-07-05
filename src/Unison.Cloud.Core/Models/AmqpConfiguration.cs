@@ -26,6 +26,7 @@ namespace Unison.Cloud.Core.Models
     {
         public string ApplyVersion { get; set; }
         public string Cache { get; set; }
+        public string Configure { get; set; }
         public string Reconnect { get; set; }
         public string Sync { get; set; }
     }
@@ -42,6 +43,7 @@ namespace Unison.Cloud.Core.Models
     {
         public string CommandApplyVersion { get; set; }
         public string CommandCache { get; set; }
+        public string CommandConfigure { get; set; }
         public string CommandReconnect { get; set; }
         public string CommandSync { get; set; }
         public string Connections { get; set; }

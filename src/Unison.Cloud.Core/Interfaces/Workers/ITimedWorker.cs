@@ -8,6 +8,6 @@ namespace Unison.Cloud.Core.Interfaces.Workers
 {
     public interface ITimedWorker
     {
-        void Execute(object state);
+        void Start(object state);
     }
 }

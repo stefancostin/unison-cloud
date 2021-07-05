@@ -28,14 +28,16 @@ namespace Unison.Cloud.Core.Workers
         private readonly IAmqpPublisher _publisher;
         private readonly ISQLRepository _repository;
         private readonly ServicesContext _servicesContext;
+        private readonly ITimerConfiguration _timerConfig;
         private readonly ILogger<CacheWorker> _logger;
 
         public CacheWorker(
             IAmqpConfiguration amqpConfig, 
-            ConnectionsManager connectionsManager,
+            ConnectionsManager connectionsManager, 
             IAmqpPublisher publisher, 
             ISQLRepository repository, 
             ServicesContext servicesContext, 
+            ITimerConfiguration timerConfig,
             ILogger<CacheWorker> logger)
         {
             _amqpConfig = amqpConfig;
@@ -43,6 +45,7 @@ namespace Unison.Cloud.Core.Workers
             _publisher = publisher;
             _repository = repository;
             _servicesContext = servicesContext;
+            _timerConfig = timerConfig;
             _logger = logger;
         }
 
@@ -53,9 +56,11 @@ namespace Unison.Cloud.Core.Workers
             string correlationId = Guid.NewGuid().ToString();
 
             _logger.LogInformation($"CorrelationId: {correlationId}. " +
-                $"Received message from agent: {message.Agent.InstanceId}.");
+                $"Received connection from agent: {message.Agent.InstanceId}.");
 
             ConnectedInstance connectedInstance = _connectionsManager.ProcessInstance(message.Agent.InstanceId, correlationId);
+
+            SendConfiguration(message.Agent.InstanceId, correlationId);
 
             List<SyncEntity> entities = GetEntitiesMetadata(connectedInstance.NodeId);
 
@@ -136,9 +141,27 @@ namespace Unison.Cloud.Core.Workers
 
         private void SendCache(AmqpCache message, string instanceId)
         {
-
             var exchange = _amqpConfig.Exchanges.Commands;
             var command = _amqpConfig.Commands.Cache;
+
+            var routingKey = $"{exchange}.{command}.{instanceId}";
+
+            _publisher.PublishMessage(message, exchange, routingKey);
+        }
+
+        private void SendConfiguration(string instanceId, string correlationId)
+        {
+            _logger.LogInformation($"CorrelationId: {correlationId}. " +
+                $"Sending heartbeat configuration to agent {instanceId}.");
+
+            var message = new AmqpAgentConfiguration() 
+            { 
+                CorrelationId = correlationId,
+                HeartbeatTimer = _timerConfig.HeartbeatTimer
+            };
+
+            var exchange = _amqpConfig.Exchanges.Commands;
+            var command = _amqpConfig.Commands.Configure;
 
             var routingKey = $"{exchange}.{command}.{instanceId}";
 

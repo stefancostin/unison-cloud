@@ -16,10 +16,6 @@ namespace Unison.Cloud.Infrastructure
 {
     public static class StartupSetup
     {
-        // public static void AddDbContext(this IServiceCollection services, string connectionString) =>
-        //     services.AddDbContext<AppDbContext>(options =>
-        //         options.UseSqlServer(connectionString));
-
         public static void AddDbContext(this IServiceCollection services)
         {
             services.AddDbContext<AppDbContext>();

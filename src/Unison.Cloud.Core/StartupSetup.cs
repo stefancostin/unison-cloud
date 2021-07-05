@@ -20,17 +20,20 @@ namespace Unison.Cloud.Infrastructure
         {
             services.AddSingleton<IAmqpConfiguration>((serviceProvider) =>
                 configuration.GetSection("Amqp").Get<AmqpConfiguration>());
+            services.AddSingleton<ITimerConfiguration>((serviceProvider) =>
+                configuration.GetSection("Timers").Get<TimerConfiguration>());
         }
 
         public static void AddCoreServices(this IServiceCollection services)
         {
             services.AddSingleton<ServicesContext>();
+            services.AddSingleton<ServiceTimers>();
             services.AddSingleton<ConnectionsManager>();
 
-            services.AddScoped<ISubscriptionWorker<AmqpSyncResponse>, SyncResultWorker>();
+            services.AddScoped<ITimedWorker, SyncRequestWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();
-
-            services.AddTransient<ITimedWorker, SyncRequestWorker>();
+            services.AddScoped<ISubscriptionWorker<AmqpHeartbeat>, HeartbeatWorker>();
+            services.AddScoped<ISubscriptionWorker<AmqpSyncResponse>, SyncResultWorker>();
 
             services.AddHostedService<TimedServiceManager>();
             services.AddHostedService<AmqpServiceManager>();
