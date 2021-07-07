@@ -21,6 +21,11 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             _logger = logger;
         }
 
+        public void Add(SyncEntity entity)
+        {
+            _context.SyncEntities.Add(entity);
+        }
+
         public SyncEntity Find(int id)
         {
             return _context.SyncEntities.Find(id);
@@ -39,6 +44,16 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
         public async Task<IEnumerable<SyncEntity>> GetAllAsync()
         {
             return await _context.SyncEntities.ToListAsync();
+        }
+
+        public void Remove(SyncEntity entity)
+        {
+            _context.SyncEntities.Remove(entity);
+        }
+
+        public void Save()
+        {
+            _context.SaveChanges();
         }
     }
 }

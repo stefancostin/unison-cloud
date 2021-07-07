@@ -51,7 +51,7 @@ namespace Unison.Cloud.Infrastructure.Data
                 .Property(p => p.Version)
                 .HasDefaultValue(1);
             modelBuilder.Entity<SyncEntity>()
-                .Property(p => p.Schema)
+                .Property(p => p.Fields)
                 .HasJsonValueConversion();
 
             modelBuilder.Entity<SyncLog>()
