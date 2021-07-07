@@ -58,11 +58,14 @@ namespace Unison.Cloud.Core.Workers
                     _logger.LogInformation($"CorrelationId: {correlationId}. " +
                         $"Sending synchronization request to {connectedInstance.InstanceId} for table {entity.Entity}.");
 
+                    var fields = new List<string>(entity.Fields);
+                    fields.Add(entity.PrimaryKey);
+
                     var syncRequest = new AmqpSyncRequest 
                     { 
-                        Entity = "Products", 
-                        Fields = new List<string>() { "Id", "Name", "Price" }, 
-                        PrimaryKey = "Id",
+                        Entity = entity.Entity, 
+                        PrimaryKey = entity.PrimaryKey,
+                        Fields = fields,
                         CorrelationId = correlationId
                     };
 
