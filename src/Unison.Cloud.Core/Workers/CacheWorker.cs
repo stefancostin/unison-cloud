@@ -120,18 +120,18 @@ namespace Unison.Cloud.Core.Workers
 
             foreach (SyncEntity entity in entities)
             {
-                // TODO: Construct the query schema from the client's database records
                 var schema = qb
-                    .From("Products") // entity.Entity
+                    .From(entity.Entity)
                     .ToReadSchema()
                     .SetPrimaryKey(Agent.RecordIdKey)
-                    .AddSelectFields(Agent.RecordIdKey, "Name", "Price")
+                    .AddSelectFields(Agent.RecordIdKey)
+                    .AddSelectFields(entity.Fields.ToArray())
                     .AddWhereCondition(Agent.IdKey, agentId)
                     .Build();
 
                 DataSet cache = _repository.Read(schema);
                 cache.Version = entity.Version;
-                cache.Records = MapAgentPrimaryKey(cache, "Id"); // entity.PrimaryKey
+                cache.Records = MapAgentPrimaryKey(cache, entity.PrimaryKey);
 
                 entitiesCache.Add(cache);
             }
