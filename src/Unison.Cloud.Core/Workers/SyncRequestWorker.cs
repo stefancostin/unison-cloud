@@ -100,7 +100,7 @@ namespace Unison.Cloud.Core.Workers
             {
                 var syncLogRepository = scope.ServiceProvider.GetRequiredService<ISyncLogRepository>();
                 syncLogRepository.Add(syncLog);
-                syncLogRepository.SaveChanges();
+                syncLogRepository.Save();
             }
         }
 

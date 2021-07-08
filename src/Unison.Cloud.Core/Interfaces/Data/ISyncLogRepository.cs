@@ -14,6 +14,6 @@ namespace Unison.Cloud.Core.Interfaces.Data
         SyncLog FindByCorrelationId(string correlationId);
         Task<IEnumerable<SyncLog>> GetAllAsync();
         IEnumerable<SyncLog> GetAll();
-        void SaveChanges();
+        void Save();
     }
 }

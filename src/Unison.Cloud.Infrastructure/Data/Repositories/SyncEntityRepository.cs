@@ -41,11 +41,6 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             return _context.SyncEntities.ToList();
         }
 
-        public async Task<IEnumerable<SyncEntity>> GetAllAsync()
-        {
-            return await _context.SyncEntities.ToListAsync();
-        }
-
         public void Remove(SyncEntity entity)
         {
             _context.SyncEntities.Remove(entity);

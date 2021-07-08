@@ -12,7 +12,6 @@ namespace Unison.Cloud.Core.Interfaces.Data
         void Add(SyncEntity entity);
         SyncEntity Find(int id);
         IEnumerable<SyncEntity> FindByNodeId(int nodeId);
-        Task<IEnumerable<SyncEntity>> GetAllAsync();
         IEnumerable<SyncEntity> GetAll();
         void Remove(SyncEntity entity);
         void Save();

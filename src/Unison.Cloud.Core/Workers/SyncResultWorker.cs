@@ -167,7 +167,7 @@ namespace Unison.Cloud.Core.Workers
                 syncLog.UpdatedAt = DateTime.Now;
                 syncLog.Completed = true;
 
-                syncLogRepository.SaveChanges();
+                syncLogRepository.Save();
             }
         }
 

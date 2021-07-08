@@ -48,7 +48,7 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             return await _context.SyncLog.ToListAsync();
         }
 
-        public void SaveChanges()
+        public void Save()
         {
             _context.SaveChanges();
         }
