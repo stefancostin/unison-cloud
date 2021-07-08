@@ -43,11 +43,6 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             return _context.SyncLog.ToList();
         }
 
-        public async Task<IEnumerable<SyncLog>> GetAllAsync()
-        {
-            return await _context.SyncLog.ToListAsync();
-        }
-
         public void Save()
         {
             _context.SaveChanges();

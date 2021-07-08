@@ -21,6 +21,11 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             _logger = logger;
         }
 
+        public void Add(SyncAgent agent)
+        {
+            _context.Add(agent);
+        }
+
         public SyncAgent Find(int id)
         {
             return _context.SyncAgent.Find(id);
@@ -28,7 +33,12 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public SyncAgent FindByInstanceId(string instanceId)
         {
-            return _context.SyncAgent.Where(e => e.InstanceId == instanceId).FirstOrDefault();
+            return _context.SyncAgent.Where(a => a.InstanceId == instanceId).FirstOrDefault();
+        }
+
+        public IEnumerable<SyncAgent> FindByNodeId(int nodeId)
+        {
+            return _context.SyncAgent.Where(a => a.NodeId == nodeId).ToList();
         }
 
         public IEnumerable<SyncAgent> GetAll()
@@ -36,9 +46,14 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             return _context.SyncAgent.ToList();
         }
 
-        public async Task<IEnumerable<SyncAgent>> GetAllAsync()
+        public void Remove(SyncAgent agent)
         {
-            return await _context.SyncAgent.ToListAsync();
+            _context.SyncAgent.Remove(agent);
+        }
+
+        public void Save()
+        {
+            _context.SaveChanges();
         }
     }
 }

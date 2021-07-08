@@ -7,13 +7,12 @@ using Unison.Cloud.Core.Data.Entities;
 
 namespace Unison.Cloud.Core.Interfaces.Data
 {
-    public interface ISyncEntityRepository
+    public interface ISyncEntityRepository : IBaseRepository
     {
         void Add(SyncEntity entity);
         SyncEntity Find(int id);
         IEnumerable<SyncEntity> FindByNodeId(int nodeId);
         IEnumerable<SyncEntity> GetAll();
         void Remove(SyncEntity entity);
-        void Save();
     }
 }

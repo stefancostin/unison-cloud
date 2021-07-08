@@ -12,16 +12,15 @@ namespace Unison.Cloud.Core.Data.Entities
     public class SyncEntity
     {
         public int Id { get; set; }
-
         public int NodeId { get; set; }
-
         public long Version { get; set; }
-
         public string Entity { get; set; }
-
         public string PrimaryKey { get; set; }
 
         [JsonField]
         public IEnumerable<string> Fields { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

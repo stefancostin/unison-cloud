@@ -11,5 +11,7 @@ namespace Unison.Cloud.Core.Data.Entities
         public int Id { get; set; }
         public string InstanceId { get; set; }
         public int NodeId { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }

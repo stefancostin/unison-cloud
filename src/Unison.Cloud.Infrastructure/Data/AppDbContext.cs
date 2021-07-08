@@ -14,7 +14,7 @@ namespace Unison.Cloud.Infrastructure.Data
     {
         private readonly IConfiguration _config;
 
-        public AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration config) : base(options) 
+        public AppDbContext(DbContextOptions<AppDbContext> options, IConfiguration config) : base(options)
         {
             _config = config;
         }
@@ -42,9 +42,15 @@ namespace Unison.Cloud.Infrastructure.Data
                 .Property(p => p.NodeId)
                 .HasDefaultValue(1);
             modelBuilder.Entity<SyncAgent>()
-                 .HasIndex(p => p.InstanceId)
-                 .IsUnique();
-        
+                .HasIndex(p => p.InstanceId)
+                .IsUnique();
+            modelBuilder.Entity<SyncAgent>()
+                .Property(p => p.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncAgent>()
+                .Property(p => p.UpdatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
             modelBuilder.Entity<SyncEntity>()
                 .Property(p => p.NodeId)
                 .HasDefaultValue(1);
@@ -54,6 +60,12 @@ namespace Unison.Cloud.Infrastructure.Data
             modelBuilder.Entity<SyncEntity>()
                 .Property(p => p.Fields)
                 .HasJsonValueConversion();
+            modelBuilder.Entity<SyncEntity>()
+                .Property(p => p.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncEntity>()
+                .Property(p => p.UpdatedAt)
+                .HasDefaultValueSql("GETDATE()");
 
             modelBuilder.Entity<SyncLog>()
                 .Property(p => p.AddedRecords)
@@ -62,21 +74,21 @@ namespace Unison.Cloud.Infrastructure.Data
                 .Property(p => p.UpdatedRecords)
                 .HasDefaultValue(0);
             modelBuilder.Entity<SyncLog>()
-               .Property(p => p.DeletedRecords)
-               .HasDefaultValue(0);
+                .Property(p => p.DeletedRecords)
+                .HasDefaultValue(0);
             modelBuilder.Entity<SyncLog>()
-             .Property(p => p.CreatedAt)
-             .HasDefaultValueSql("GETDATE()");
+                .Property(p => p.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
             modelBuilder.Entity<SyncLog>()
-             .Property(p => p.UpdatedAt)
-             .HasDefaultValueSql("GETDATE()");
+                .Property(p => p.UpdatedAt)
+                .HasDefaultValueSql("GETDATE()");
 
             modelBuilder.Entity<SyncNode>()
-             .Property(p => p.CreatedAt)
-             .HasDefaultValueSql("GETDATE()");
+                .Property(p => p.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
             modelBuilder.Entity<SyncNode>()
-             .Property(p => p.UpdatedAt)
-             .HasDefaultValueSql("GETDATE()");
+                .Property(p => p.UpdatedAt)
+                .HasDefaultValueSql("GETDATE()");
         }
     }
 }
