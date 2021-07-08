@@ -23,6 +23,7 @@ namespace Unison.Cloud.Infrastructure.Data
         public DbSet<SyncAgent> SyncAgent { get; set; }
         public DbSet<SyncEntity> SyncEntities { get; set; }
         public DbSet<SyncLog> SyncLog { get; set; }
+        public DbSet<SyncNode> SyncNodes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -67,6 +68,13 @@ namespace Unison.Cloud.Infrastructure.Data
              .Property(p => p.CreatedAt)
              .HasDefaultValueSql("GETDATE()");
             modelBuilder.Entity<SyncLog>()
+             .Property(p => p.UpdatedAt)
+             .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<SyncNode>()
+             .Property(p => p.CreatedAt)
+             .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncNode>()
              .Property(p => p.UpdatedAt)
              .HasDefaultValueSql("GETDATE()");
         }
