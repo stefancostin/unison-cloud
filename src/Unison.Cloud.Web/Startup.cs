@@ -17,6 +17,8 @@ namespace Unison.Cloud.Web
 {
     public class Startup
     {
+        private const string CorsPolicy = "AllowAllOrigins";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -27,6 +29,10 @@ namespace Unison.Cloud.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(CorsPolicy, builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            });
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -47,6 +53,7 @@ namespace Unison.Cloud.Web
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Unison.Cloud.Web v1"));
+                app.UseCors(CorsPolicy);
             }
 
             app.UseHttpsRedirection();

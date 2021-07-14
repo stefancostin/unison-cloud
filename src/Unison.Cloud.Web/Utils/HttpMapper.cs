@@ -9,6 +9,28 @@ namespace Unison.Cloud.Web.Utils
 {
     public static class HttpMapper
     {
+        #region Agent Mapping
+        public static SyncAgent ToDbModel(this AgentDto agentDto)
+        {
+            return new SyncAgent()
+            {
+                Id = agentDto.Id,
+                NodeId = agentDto.NodeId,
+            };
+        }
+
+        public static AgentDto ToHttpModel(this SyncAgent syncAgent)
+        {
+            return new AgentDto()
+            {
+                Id = syncAgent.Id,
+                InstanceId = syncAgent.InstanceId,
+                NodeId = syncAgent.NodeId,
+            };
+        }
+        #endregion
+
+        #region Entity Mapping
         public static SyncEntity ToDbModel(this EntityDto entityDto)
         {
             return new SyncEntity()
@@ -32,5 +54,28 @@ namespace Unison.Cloud.Web.Utils
                 Fields = syncEntity.Fields
             };
         }
+        #endregion
+
+        #region Node Mapping
+        public static SyncNode ToDbModel(this NodeDto nodeDto)
+        {
+            return new SyncNode()
+            {
+                Id = nodeDto.Id,
+                Name = nodeDto.Name,
+                Description = nodeDto.Description
+            };
+        }
+
+        public static NodeDto ToHttpModel(this SyncNode syncNode)
+        {
+            return new NodeDto()
+            {
+                Id = syncNode.Id,
+                Name = syncNode.Name,
+                Description = syncNode.Description
+            };
+        }
+        #endregion
     }
 }

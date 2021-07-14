@@ -11,14 +11,14 @@ using Unison.Cloud.Web.Utils;
 
 namespace Unison.Cloud.Web.Controllers
 {
-    [Route("api/entities")]
+    [Route("api/[controller]")]
     [ApiController]
     public class EntitiesController : ControllerBase
     {
         private readonly ISyncEntityRepository _entityRepository;
         private readonly ILogger<EntitiesController> _logger;
 
-        public EntitiesController(ILogger<EntitiesController> logger, ISyncEntityRepository entityRepository)
+        public EntitiesController(ISyncEntityRepository entityRepository, ILogger<EntitiesController> logger)
         {
             _entityRepository = entityRepository;
             _logger = logger;
@@ -79,6 +79,7 @@ namespace Unison.Cloud.Web.Controllers
             existingEntity.Entity = requestEntity.Entity;
             existingEntity.PrimaryKey = requestEntity.PrimaryKey;
             existingEntity.Fields = requestEntity.Fields;
+            existingEntity.UpdatedAt = DateTime.Now;
         }
     }
 }
