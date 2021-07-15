@@ -50,6 +50,10 @@ namespace Unison.Cloud.Infrastructure.Data
             modelBuilder.Entity<SyncAgent>()
                 .Property(p => p.UpdatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncAgent>()
+                .HasOne(a => a.Node)
+                .WithMany(n => n.Agents)
+                .HasForeignKey(a => a.NodeId);
 
             modelBuilder.Entity<SyncEntity>()
                 .Property(p => p.NodeId)
@@ -89,6 +93,13 @@ namespace Unison.Cloud.Infrastructure.Data
             modelBuilder.Entity<SyncNode>()
                 .Property(p => p.UpdatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncNode>()
+                .HasMany(n => n.Agents)
+                .WithOne(a => a.Node)
+                .HasForeignKey(n => n.NodeId);
+            modelBuilder.Entity<SyncNode>()
+                .Navigation(b => b.Agents)
+                .UsePropertyAccessMode(PropertyAccessMode.Property);
         }
     }
 }

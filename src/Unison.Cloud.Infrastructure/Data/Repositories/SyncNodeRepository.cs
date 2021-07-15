@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +33,7 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public IEnumerable<SyncNode> GetAll()
         {
-            return _context.SyncNodes.ToList();
+            return _context.SyncNodes.Include(n => n.Agents).ToList();
         }
 
         public void Remove(SyncNode node)

@@ -15,6 +15,7 @@ namespace Unison.Cloud.Web.Utils
             return new SyncAgent()
             {
                 Id = agentDto.Id,
+                InstanceId = agentDto.InstanceId,
                 NodeId = agentDto.NodeId,
             };
         }
@@ -73,7 +74,8 @@ namespace Unison.Cloud.Web.Utils
             {
                 Id = syncNode.Id,
                 Name = syncNode.Name,
-                Description = syncNode.Description
+                Description = syncNode.Description,
+                Agents = syncNode.Agents == null ? new List<string>() : syncNode.Agents.Select(a => a.InstanceId).ToList()
             };
         }
         #endregion
