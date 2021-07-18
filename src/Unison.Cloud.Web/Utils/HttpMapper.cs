@@ -37,7 +37,7 @@ namespace Unison.Cloud.Web.Utils
             return new SyncEntity()
             {
                 Id = entityDto.Id,
-                NodeId = entityDto.NodeId,
+                NodeId = entityDto.Node.Id,
                 Entity = entityDto.Entity,
                 PrimaryKey = entityDto.PrimaryKey ?? "Id",
                 Fields = entityDto.Fields
@@ -49,7 +49,7 @@ namespace Unison.Cloud.Web.Utils
             return new EntityDto()
             {
                 Id = syncEntity.Id,
-                NodeId = syncEntity.NodeId,
+                Node = syncEntity.Node?.ToHttpModel(),
                 Entity = syncEntity.Entity,
                 PrimaryKey = syncEntity.PrimaryKey,
                 Fields = syncEntity.Fields

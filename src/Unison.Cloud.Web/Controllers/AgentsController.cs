@@ -42,6 +42,7 @@ namespace Unison.Cloud.Web.Controllers
         [HttpPost]
         public ActionResult Post(AgentDto agent)
         {
+            ValidateRequest(agent);
             _agentRepository.Add(agent.ToDbModel());
             _agentRepository.Save();
             return Ok();

@@ -28,7 +28,7 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public SyncAgent Find(int id)
         {
-            return _context.SyncAgent.Include(a => a.Node).Where(a => a.Id == id).FirstOrDefault();
+            return _context.SyncAgent.Include(a => a.Node).FirstOrDefault(a => a.Id == id);
         }
 
         public SyncAgent FindByInstanceId(string instanceId)

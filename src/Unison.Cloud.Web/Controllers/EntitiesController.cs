@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Data.Entities;
+using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Web.Models;
 using Unison.Cloud.Web.Utils;
@@ -41,6 +42,7 @@ namespace Unison.Cloud.Web.Controllers
         [HttpPost]
         public ActionResult Post(EntityDto entity)
         {
+            ValidateRequest(entity);
             _entityRepository.Add(entity.ToDbModel());
             _entityRepository.Save();
             return Ok();
@@ -49,6 +51,8 @@ namespace Unison.Cloud.Web.Controllers
         [HttpPut("{id}")]
         public ActionResult Put(int id, EntityDto entity)
         {
+            ValidateRequest(entity);
+
             SyncEntity existingEntity = _entityRepository.Find(id);
 
             if (existingEntity == null)
@@ -75,11 +79,17 @@ namespace Unison.Cloud.Web.Controllers
 
         private void MapFieldsToDbModel(in EntityDto requestEntity, in SyncEntity existingEntity)
         {
-            existingEntity.NodeId = requestEntity.NodeId;
+            existingEntity.NodeId = requestEntity.Node.Id;
             existingEntity.Entity = requestEntity.Entity;
             existingEntity.PrimaryKey = requestEntity.PrimaryKey;
             existingEntity.Fields = requestEntity.Fields;
             existingEntity.UpdatedAt = DateTime.Now;
+        }
+
+        public void ValidateRequest(EntityDto entity)
+        {
+            if (entity.Node == null || entity.Node.Id == 0)
+                throw new InvalidRequestException("Entity's node cannot be null or missing an id");
         }
     }
 }

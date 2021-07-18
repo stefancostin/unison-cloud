@@ -13,6 +13,7 @@ namespace Unison.Cloud.Core.Data.Entities
     {
         public int Id { get; set; }
         public int NodeId { get; set; }
+        public SyncNode Node { get; set; }
         public long Version { get; set; }
         public string Entity { get; set; }
         public string PrimaryKey { get; set; }
@@ -22,7 +23,5 @@ namespace Unison.Cloud.Core.Data.Entities
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
-        public SyncNode Node { get; set; }
     }
 }

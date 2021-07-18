@@ -28,17 +28,17 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public SyncEntity Find(int id)
         {
-            return _context.SyncEntities.Find(id);
+            return _context.SyncEntities.Include(e => e.Node).FirstOrDefault(e => e.Id == id);
         }
 
         public IEnumerable<SyncEntity> FindByNodeId(int nodeId)
         {
-            return _context.SyncEntities.Where(e => e.NodeId == nodeId).ToList();
+            return _context.SyncEntities.Where(e => e.NodeId == nodeId).Include(e => e.Node).ToList();
         }
 
         public IEnumerable<SyncEntity> GetAll()
         {
-            return _context.SyncEntities.ToList();
+            return _context.SyncEntities.Include(e => e.Node).ToList();
         }
 
         public void Remove(SyncEntity entity)
