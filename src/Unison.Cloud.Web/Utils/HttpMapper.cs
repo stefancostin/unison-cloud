@@ -16,7 +16,7 @@ namespace Unison.Cloud.Web.Utils
             {
                 Id = agentDto.Id,
                 InstanceId = agentDto.InstanceId,
-                NodeId = agentDto.NodeId,
+                NodeId = agentDto.Node.Id,
             };
         }
 
@@ -26,7 +26,7 @@ namespace Unison.Cloud.Web.Utils
             {
                 Id = syncAgent.Id,
                 InstanceId = syncAgent.InstanceId,
-                NodeId = syncAgent.NodeId,
+                Node = syncAgent.Node?.ToHttpModel(),
             };
         }
         #endregion

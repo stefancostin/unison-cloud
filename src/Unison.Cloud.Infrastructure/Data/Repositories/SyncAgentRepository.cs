@@ -28,22 +28,22 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public SyncAgent Find(int id)
         {
-            return _context.SyncAgent.Find(id);
+            return _context.SyncAgent.Include(a => a.Node).Where(a => a.Id == id).FirstOrDefault();
         }
 
         public SyncAgent FindByInstanceId(string instanceId)
         {
-            return _context.SyncAgent.Where(a => a.InstanceId == instanceId).FirstOrDefault();
+            return _context.SyncAgent.Where(a => a.InstanceId == instanceId).Include(a => a.Node).FirstOrDefault();
         }
 
         public IEnumerable<SyncAgent> FindByNodeId(int nodeId)
         {
-            return _context.SyncAgent.Where(a => a.NodeId == nodeId).ToList();
+            return _context.SyncAgent.Where(a => a.NodeId == nodeId).Include(a => a.Node).ToList();
         }
 
         public IEnumerable<SyncAgent> GetAll()
         {
-            return _context.SyncAgent.ToList();
+            return _context.SyncAgent.Include(a => a.Node).ToList();
         }
 
         public void Remove(SyncAgent agent)

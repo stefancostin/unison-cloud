@@ -7,6 +7,6 @@ namespace Unison.Cloud.Web.Models
     {
         public int Id { get; set; }
         public string InstanceId { get; set; }
-        public int NodeId { get; set; }
+        public NodeDto Node { get; set; }
     }
 }

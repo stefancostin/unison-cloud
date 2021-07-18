@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Data.Entities;
+using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Web.Models;
 using Unison.Cloud.Web.Utils;
@@ -49,12 +50,15 @@ namespace Unison.Cloud.Web.Controllers
         [HttpPut("{id}")]
         public ActionResult Put(int id, AgentDto agent)
         {
+            ValidateRequest(agent);
+
             SyncAgent existingAgent = _agentRepository.Find(id);
 
             if (existingAgent == null)
                 return NotFound();
 
-            existingAgent.NodeId = agent.NodeId;
+            existingAgent.InstanceId = agent.InstanceId;
+            existingAgent.NodeId = agent.Node.Id;
             existingAgent.UpdatedAt = DateTime.Now;
 
             _agentRepository.Save();
@@ -72,6 +76,20 @@ namespace Unison.Cloud.Web.Controllers
             _agentRepository.Remove(agent);
             _agentRepository.Save();
             return Ok();
+        }
+
+        public void ValidateRequest(AgentDto agent)
+        {
+            if (agent.Node == null || agent.Node.Id == 0)
+                throw new InvalidRequestException("Agent's node cannot be null or missing an id");
+
+            if (string.IsNullOrWhiteSpace(agent.InstanceId))
+                throw new InvalidRequestException("Agent's instance id cannot be null or empty");
+
+            SyncAgent existingInstance = _agentRepository.FindByInstanceId(agent.InstanceId);
+
+            if (existingInstance != null && existingInstance.Id != agent.Id)
+                throw new InvalidRequestException("Agent's instance id is duplicated");
         }
     }
 }
