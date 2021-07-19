@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Web.Models;
-using Unison.Cloud.Web.Utils;
+using Unison.Cloud.Web.Utilities;
 
 namespace Unison.Cloud.Web.Controllers
 {

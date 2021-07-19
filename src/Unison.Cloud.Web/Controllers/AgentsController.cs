@@ -8,7 +8,7 @@ using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Data;
 using Unison.Cloud.Web.Models;
-using Unison.Cloud.Web.Utils;
+using Unison.Cloud.Web.Utilities;
 
 namespace Unison.Cloud.Web.Controllers
 {
@@ -36,6 +36,10 @@ namespace Unison.Cloud.Web.Controllers
         public ActionResult<AgentDto> Get(int id)
         {
             SyncAgent agent = _agentRepository.Find(id);
+
+            if (agent == null)
+                return NotFound();
+
             return Ok(agent.ToHttpModel());
         }
 

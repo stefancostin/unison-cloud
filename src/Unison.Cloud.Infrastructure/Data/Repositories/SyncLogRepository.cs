@@ -30,17 +30,17 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
 
         public SyncLog Find(int id)
         {
-            return _context.SyncLog.Find(id);
+            return _context.SyncLog.Include(sl => sl.Agent).FirstOrDefault(sl => sl.Id == id);
         }
 
         public SyncLog FindByCorrelationId(string correlationId)
         {
-            return _context.SyncLog.FirstOrDefault(sl => sl.CorrelationId == correlationId);
+            return _context.SyncLog.Include(sl => sl.Agent).FirstOrDefault(sl => sl.CorrelationId == correlationId);
         }
 
         public IEnumerable<SyncLog> GetAll()
         {
-            return _context.SyncLog.ToList();
+            return _context.SyncLog.Include(sl => sl.Agent).ThenInclude(a => a.Node).OrderByDescending(sl => sl.CreatedAt).ToList();
         }
 
         public void Save()

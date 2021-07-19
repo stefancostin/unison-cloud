@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Web.Models;
 
-namespace Unison.Cloud.Web.Utils
+namespace Unison.Cloud.Web.Utilities
 {
     public static class HttpMapper
     {
@@ -76,6 +76,25 @@ namespace Unison.Cloud.Web.Utils
                 Name = syncNode.Name,
                 Description = syncNode.Description,
                 Agents = syncNode.Agents == null ? new List<string>() : syncNode.Agents.Select(a => a.InstanceId).ToList()
+            };
+        }
+        #endregion
+
+        #region Log Mapping
+        public static LogDto ToHttpModel(this SyncLog syncLog)
+        {
+            return new LogDto()
+            {
+                Id = syncLog.Id,
+                CorrelationId = syncLog.CorrelationId,
+                Agent = syncLog.Agent?.ToHttpModel(),
+                Node = syncLog.Agent?.Node?.ToHttpModel(),
+                Entity = syncLog.Entity,
+                AddedRecords = syncLog.AddedRecords,
+                UpdatedRecords = syncLog.UpdatedRecords,
+                DeletedRecords = syncLog.DeletedRecords,
+                Completed = syncLog.Completed,
+                Date = syncLog.CreatedAt,
             };
         }
         #endregion
