@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Data.Entities;
+using Unison.Cloud.Core.Models;
 using Unison.Cloud.Web.Models;
 
 namespace Unison.Cloud.Web.Utilities
