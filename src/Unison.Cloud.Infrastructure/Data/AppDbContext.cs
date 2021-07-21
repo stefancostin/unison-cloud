@@ -19,6 +19,7 @@ namespace Unison.Cloud.Infrastructure.Data
             _config = config;
         }
 
+        public DbSet<Account> Accounts { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<SyncAgent> SyncAgent { get; set; }
         public DbSet<SyncEntity> SyncEntities { get; set; }
