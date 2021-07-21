@@ -13,9 +13,9 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
     public class SyncAgentRepository : ISyncAgentRepository
     {
         private readonly AppDbContext _context;
-        private readonly ILogger<SyncEntityRepository> _logger;
+        private readonly ILogger<SyncAgentRepository> _logger;
 
-        public SyncAgentRepository(AppDbContext context, ILogger<SyncEntityRepository> logger)
+        public SyncAgentRepository(AppDbContext context, ILogger<SyncAgentRepository> logger)
         {
             _context = context;
             _logger = logger;

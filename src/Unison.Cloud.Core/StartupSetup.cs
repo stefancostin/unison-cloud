@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Interfaces.Configuration;
+using Unison.Cloud.Core.Interfaces.Services;
 using Unison.Cloud.Core.Interfaces.Workers;
 using Unison.Cloud.Core.Models;
 using Unison.Cloud.Core.Services;
@@ -30,6 +31,7 @@ namespace Unison.Cloud.Infrastructure
             services.AddSingleton<ServiceTimers>();
             services.AddSingleton<ConnectionsManager>();
 
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<ITimedWorker, SyncRequestWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpHeartbeat>, HeartbeatWorker>();
