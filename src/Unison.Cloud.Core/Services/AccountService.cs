@@ -11,12 +11,12 @@ using Unison.Cloud.Core.Interfaces.Services;
 
 namespace Unison.Cloud.Core.Services
 {
-    public class AuthenticationService : IAuthenticationService
+    public class AccountService : IAccountService
     {
         private readonly IAccountRepository _accountRepository;
-        private readonly ILogger<AuthenticationService> _logger;
+        private readonly ILogger<AccountService> _logger;
 
-        public AuthenticationService(IAccountRepository accountRepository, ILogger<AuthenticationService> logger)
+        public AccountService(IAccountRepository accountRepository, ILogger<AccountService> logger)
         {
             _accountRepository = accountRepository;
             _logger = logger;
@@ -27,7 +27,7 @@ namespace Unison.Cloud.Core.Services
             return _accountRepository.GetAll();
         }
 
-        public Account FindById(int id)
+        public Account Find(int id)
         {
             return _accountRepository.Find(id);
         }

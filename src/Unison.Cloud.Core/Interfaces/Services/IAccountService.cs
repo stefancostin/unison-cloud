@@ -7,10 +7,10 @@ using Unison.Cloud.Core.Data.Entities;
 
 namespace Unison.Cloud.Core.Interfaces.Services
 {
-    public interface IAuthenticationService
+    public interface IAccountService
     {
         IEnumerable<Account> GetAll();
-        Account FindById(int id);
+        Account Find(int id);
         Account Authenticate(string username, string password);
         Account Create(Account account, string password);
         void Update(Account account, string password = null);

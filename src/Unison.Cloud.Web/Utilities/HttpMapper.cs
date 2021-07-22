@@ -10,6 +10,40 @@ namespace Unison.Cloud.Web.Utilities
 {
     public static class HttpMapper
     {
+        #region Account Mapping
+        public static Account ToBusinessModel(this RegisterDto registerDto)
+        {
+            return new Account()
+            {
+                FirstName = registerDto.FirstName,
+                LastName = registerDto.LastName,
+                Username = registerDto.Username,
+            };
+        }
+
+        public static AuthResponseDto ToAuthResponseModel(this Account account)
+        {
+            return new AuthResponseDto()
+            {
+                Id = account.Id,
+                FirstName = account.FirstName,
+                LastName = account.LastName,
+                Username = account.Username,
+            };
+        }
+
+        public static AccountDto ToHttpModel(this Account account)
+        {
+            return new AccountDto()
+            {
+                Id = account.Id,
+                FirstName = account.FirstName,
+                LastName = account.LastName,
+                Username = account.Username,
+            };
+        }
+        #endregion
+
         #region Agent Mapping
         public static SyncAgent ToDbModel(this AgentDto agentDto)
         {

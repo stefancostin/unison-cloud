@@ -19,6 +19,8 @@ namespace Unison.Cloud.Infrastructure
     {
         public static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddSingleton<IAuthConfiguration>((serviceProvider) =>
+                configuration.GetSection("Authentication").Get<AuthConfiguration>());
             services.AddSingleton<IAmqpConfiguration>((serviceProvider) =>
                 configuration.GetSection("Amqp").Get<AmqpConfiguration>());
             services.AddSingleton<ITimerConfiguration>((serviceProvider) =>
@@ -31,7 +33,8 @@ namespace Unison.Cloud.Infrastructure
             services.AddSingleton<ServiceTimers>();
             services.AddSingleton<ConnectionsManager>();
 
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ITimedWorker, SyncRequestWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpHeartbeat>, HeartbeatWorker>();

@@ -3,11 +3,12 @@
 namespace Unison.Cloud.Web.Models
 {
     [Serializable]
-    public class AccountDto
+    public class AuthResponseDto
     {
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Username { get; set; }
+        public string Token { get; set; }
     }
 }

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Unison.Cloud.Web.Models
 {
     [Serializable]
-    public class AuthenticationDto
+    public class AuthRequestDto
     {
         [Required]
         public string Username { get; set; }

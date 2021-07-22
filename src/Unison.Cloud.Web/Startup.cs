@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unison.Cloud.Core.Utilities;
 using Unison.Cloud.Infrastructure;
+using Unison.Cloud.Web.Setup;
 
 namespace Unison.Cloud.Web
 {
@@ -39,6 +40,7 @@ namespace Unison.Cloud.Web
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Unison.Cloud.Web", Version = "v1" });
             });
             services.AddConfigurations(Configuration);
+            services.AddAuthentication(Configuration);
             services.AddDbContext();
             services.AddAmqpContext();
             services.AddCoreServices();
@@ -53,13 +55,15 @@ namespace Unison.Cloud.Web
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Unison.Cloud.Web v1"));
-                app.UseCors(CorsPolicy);
             }
+
+            app.UseCors(CorsPolicy);
 
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
