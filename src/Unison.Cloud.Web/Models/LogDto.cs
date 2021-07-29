@@ -14,6 +14,7 @@ namespace Unison.Cloud.Web.Models
         public int UpdatedRecords { get; set; }
         public int DeletedRecords { get; set; }
         public bool Completed { get; set; }
+        public string ErrorMessage { get; set; }
         public DateTime Date { get; set; }
     }
 }

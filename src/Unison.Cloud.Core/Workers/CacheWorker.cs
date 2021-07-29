@@ -32,11 +32,11 @@ namespace Unison.Cloud.Core.Workers
         private readonly ILogger<CacheWorker> _logger;
 
         public CacheWorker(
-            IAmqpConfiguration amqpConfig, 
-            ConnectionsManager connectionsManager, 
-            IAmqpPublisher publisher, 
-            ISQLRepository repository, 
-            ServicesContext servicesContext, 
+            IAmqpConfiguration amqpConfig,
+            ConnectionsManager connectionsManager,
+            IAmqpPublisher publisher,
+            ISQLRepository repository,
+            ServicesContext servicesContext,
             ITimerConfiguration timerConfig,
             ILogger<CacheWorker> logger)
         {
@@ -120,23 +120,50 @@ namespace Unison.Cloud.Core.Workers
 
             foreach (SyncEntity entity in entities)
             {
-                var schema = qb
-                    .From(entity.Entity)
-                    .ToReadSchema()
-                    .SetPrimaryKey(Agent.RecordIdKey)
-                    .AddSelectFields(Agent.RecordIdKey)
-                    .AddSelectFields(entity.Fields.ToArray())
-                    .AddWhereCondition(Agent.IdKey, agentId)
-                    .Build();
+                try
+                {
+                    var schema = qb
+                        .From(entity.Entity)
+                        .ToReadSchema()
+                        .SetPrimaryKey(Agent.RecordIdKey)
+                        .AddSelectFields(Agent.RecordIdKey)
+                        .AddSelectFields(entity.Fields.ToArray())
+                        .AddWhereCondition(Agent.IdKey, agentId)
+                        .Build();
 
-                DataSet cache = _repository.Read(schema);
-                cache.Version = entity.Version;
-                cache.Records = MapAgentPrimaryKey(cache, entity.PrimaryKey);
+                    DataSet cache = _repository.Read(schema);
+                    cache.Version = entity.Version;
+                    cache.Records = MapAgentPrimaryKey(cache, entity.PrimaryKey);
 
-                entitiesCache.Add(cache);
+                    entitiesCache.Add(cache);
+                }
+                catch (Exception ex)
+                {
+                    LogError(ex, entity, agentId);
+                }
             }
 
             return entitiesCache;
+        }
+
+        private void LogError(Exception ex, SyncEntity entity, int agentId)
+        {
+            using (var scope = _servicesContext.Services.CreateScope())
+            {
+                var syncLogRepository = scope.ServiceProvider.GetRequiredService<ISyncLogRepository>();
+
+                SyncLog syncError = new SyncLog()
+                {
+                    AgentId = agentId,
+                    Completed = false,
+                    CorrelationId = Guid.NewGuid().ToString(),
+                    Entity = entity.Entity,
+                    ErrorMessage = "Origin: Cloud Server Cache Worker. " + ex.Message,
+                };
+
+                syncLogRepository.Add(syncError);
+                syncLogRepository.Save();
+            }
         }
 
         private void SendCache(AmqpCache message, string instanceId)
@@ -154,8 +181,8 @@ namespace Unison.Cloud.Core.Workers
             _logger.LogInformation($"CorrelationId: {correlationId}. " +
                 $"Sending heartbeat configuration to agent {instanceId}.");
 
-            var message = new AmqpAgentConfiguration() 
-            { 
+            var message = new AmqpAgentConfiguration()
+            {
                 CorrelationId = correlationId,
                 HeartbeatTimer = _timerConfig.HeartbeatTimer
             };

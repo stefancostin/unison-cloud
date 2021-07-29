@@ -35,6 +35,7 @@ namespace Unison.Cloud.Core.Models
     {
         public string Commands { get; set; }
         public string Connections { get; set; }
+        public string Errors { get; set; }
         public string Heartbeat { get; set; }
         public string Response { get; set; }
     }
@@ -47,6 +48,7 @@ namespace Unison.Cloud.Core.Models
         public string CommandReconnect { get; set; }
         public string CommandSync { get; set; }
         public string Connections { get; set; }
+        public string Errors { get; set; }
         public string Heartbeat { get; set; }
         public string Response { get; set; }
     }

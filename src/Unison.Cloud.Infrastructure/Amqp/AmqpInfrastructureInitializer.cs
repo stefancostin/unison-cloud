@@ -28,6 +28,7 @@ namespace Unison.Cloud.Infrastructure.Amqp
             using (var channel = _channelFactory.CreateUnmanagedChannel())
             {
                 BindToConnectionsExchange(channel);
+                BindToErrorsExchange(channel);
                 BindToHeartbeatExchange(channel);
                 BindToResponsesExchange(channel);
             }
@@ -53,6 +54,28 @@ namespace Unison.Cloud.Infrastructure.Amqp
             channel.QueuePurge(queue);
 
             _amqpConfig.Queues.Connections = queue;
+        }
+
+        private void BindToErrorsExchange(IModel channel)
+        {
+            var exchange = _amqpConfig.Exchanges.Errors;
+            var queue = exchange;
+            var routingKey = exchange;
+
+            channel.QueueDeclare(queue: queue,
+                                 durable: false,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null);
+
+            channel.QueueBind(queue: queue,
+                 exchange: exchange,
+                 routingKey: routingKey,
+                 arguments: null);
+
+            channel.QueuePurge(queue);
+
+            _amqpConfig.Queues.Errors = queue;
         }
 
         private void BindToHeartbeatExchange(IModel channel)

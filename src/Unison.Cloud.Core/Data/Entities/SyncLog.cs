@@ -19,6 +19,7 @@ namespace Unison.Cloud.Core.Data.Entities
         public int UpdatedRecords { get; set; }
         public int DeletedRecords { get; set; }
         public bool Completed { get; set; }
+        public string ErrorMessage { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

@@ -38,6 +38,7 @@ namespace Unison.Cloud.Infrastructure
             services.AddScoped<ITimedWorker, SyncRequestWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpConnected>, CacheWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpHeartbeat>, HeartbeatWorker>();
+            services.AddScoped<ISubscriptionWorker<AmqpSyncError>, SyncErrorWorker>();
             services.AddScoped<ISubscriptionWorker<AmqpSyncResponse>, SyncResultWorker>();
 
             services.AddHostedService<TimedServiceManager>();

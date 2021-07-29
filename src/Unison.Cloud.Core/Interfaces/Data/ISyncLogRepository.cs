@@ -9,6 +9,7 @@ namespace Unison.Cloud.Core.Interfaces.Data
 {
     public interface ISyncLogRepository : IBaseRepository
     {
+        void Add(SyncLog syncLog);
         void Add(List<SyncLog> syncLog);
         SyncLog Find(int id);
         SyncLog FindByCorrelationId(string correlationId);

@@ -129,6 +129,7 @@ namespace Unison.Cloud.Web.Utilities
                 UpdatedRecords = syncLog.UpdatedRecords,
                 DeletedRecords = syncLog.DeletedRecords,
                 Completed = syncLog.Completed,
+                ErrorMessage = syncLog.ErrorMessage,
                 Date = syncLog.CreatedAt,
             };
         }

@@ -20,6 +20,12 @@ namespace Unison.Cloud.Infrastructure.Data.Repositories
             _context = context;
             _logger = logger;
         }
+
+        public void Add(SyncLog syncLog)
+        {
+            _context.SyncLog.Add(syncLog);
+        }
+
         public void Add(List<SyncLog> syncLog)
         {
             foreach (SyncLog log in syncLog)
