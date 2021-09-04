@@ -134,7 +134,7 @@ namespace Unison.Cloud.Core.Workers
 
             LogSyncStatus(correlationId, insertedRecords, updatedRecords, deletedRecords);
 
-            SendSynchronizeCacheCommand(message.Agent.InstanceId, message.State.Entity, currentVersion);
+            SendSynchronizeCacheCommand(message.Agent.InstanceId, message.State.Entity, currentVersion, correlationId);
         }
 
         private string GetSyncEntityTableName()
@@ -180,10 +180,11 @@ namespace Unison.Cloud.Core.Workers
                 throw new InvalidRequestException("An entity name must be provided");
         }
 
-        private void SendSynchronizeCacheCommand(string instanceId, string entity, long version)
+        private void SendSynchronizeCacheCommand(string instanceId, string entity, long version, string correlationId)
         {
             AmqpApplyVersion message = new AmqpApplyVersion()
             {
+                CorrelationId = correlationId,
                 Entity = entity,
                 Version = version
             };
