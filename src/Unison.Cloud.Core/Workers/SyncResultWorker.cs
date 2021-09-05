@@ -14,6 +14,7 @@ using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
+using Unison.Cloud.Core.Interfaces.Services;
 using Unison.Cloud.Core.Interfaces.Workers;
 using Unison.Cloud.Core.Models;
 using Unison.Cloud.Core.Services;
@@ -30,6 +31,7 @@ namespace Unison.Cloud.Core.Workers
         private readonly ILogger<SyncRequestWorker> _logger;
         private readonly IAmqpPublisher _publisher;
         private readonly ISQLRepository _repository;
+        private readonly IVersioningService _versioningService;
         private readonly ServicesContext _servicesContext;
         private readonly object _syncLock;
 
@@ -39,6 +41,7 @@ namespace Unison.Cloud.Core.Workers
             ILogger<SyncRequestWorker> logger,
             IAmqpPublisher publisher,
             ISQLRepository repository,
+            IVersioningService versioningService,
             ServicesContext servicesContext)
         {
             _amqpConfig = amqpConfig;
@@ -47,6 +50,7 @@ namespace Unison.Cloud.Core.Workers
             _logger = logger;
             _repository = repository;
             _servicesContext = servicesContext;
+            _versioningService = versioningService;
             _syncLock = new object();
         }
 
@@ -56,11 +60,7 @@ namespace Unison.Cloud.Core.Workers
 
             string correlationId = message.CorrelationId;
 
-            _logger.LogInformation($"CorrelationId: {correlationId}. " +
-                $"Received message from agent: {message.Agent.InstanceId}. " +
-                $"Added: {message.State.Added.Records.Count}, " +
-                $"Updated: {message.State.Updated.Records.Count}, " +
-                $"Deleted: {message.State.Deleted.Records.Count}.");
+            LogMessage(message, correlationId);
 
             ConnectedInstance connectedInstance = _connectionsManager.ProcessInstance(message.Agent.InstanceId, correlationId);
 
@@ -71,14 +71,6 @@ namespace Unison.Cloud.Core.Workers
             }
 
             QuerySchemaBuilder qb = new QuerySchemaBuilder();
-
-            QuerySchema readVersionSchema = qb
-                .From(GetSyncEntityTableName())
-                .ToReadSchema()
-                .AddSelectFields(nameof(SyncEntity.Id), nameof(SyncEntity.Version))
-                .SetPrimaryKey(nameof(SyncEntity.Id))
-                .AddWhereCondition(nameof(SyncEntity.Entity), message.State.Entity)
-                .Build();
 
             QuerySchema insertSchema = qb
                 .From(message.State.Added)
@@ -99,31 +91,18 @@ namespace Unison.Cloud.Core.Workers
                 .Build();
 
             Dictionary<int, int> affectedRowsMap = new Dictionary<int, int>();
-            long currentVersion;
+            SyncVersion currentVersion;
 
             lock (_syncLock)
             {
-                DataSet entityMetadata = _repository.Read(readVersionSchema);
-                currentVersion = (long)GetCurrentEntityVersion(entityMetadata, nameof(SyncEntity.Version));
-                int entityId = (int)GetCurrentEntityVersion(entityMetadata, nameof(SyncEntity.Id));
+                currentVersion = _versioningService.GetVersion(message.State.Entity, connectedInstance.AgentId);
 
-                if (currentVersion != message.State.Version)
+                if (currentVersion.Version != message.State.Version)
                     return;
 
-                long newVersion = currentVersion;
-                Interlocked.Increment(ref newVersion);
+                affectedRowsMap = _repository.ExecuteInTransaction(insertSchema, updateSchema, deleteSchema);
 
-                QuerySchema incrementVersionSchema = qb
-                    .From(GetSyncEntityTableName())
-                    .ToUpdateSchema()
-                    .SetPrimaryKey(nameof(SyncEntity.Id))
-                    .AddRecord(new QueryParam { Name = nameof(SyncEntity.Id), Value = entityId },
-                               new QueryParam { Name = nameof(SyncEntity.Version), Value = newVersion })
-                    .AddWhereCondition(nameof(SyncEntity.Entity), message.State.Entity)
-                    .Build();
-
-                affectedRowsMap = _repository.ExecuteInTransaction(
-                    insertSchema, updateSchema, deleteSchema, incrementVersionSchema);
+                _versioningService.IncrementVersion(currentVersion);
             }
 
             _logger.LogDebug($"CorrelationId: {correlationId}. Database synchronization complete.");
@@ -134,18 +113,16 @@ namespace Unison.Cloud.Core.Workers
 
             LogSyncStatus(correlationId, insertedRecords, updatedRecords, deletedRecords);
 
-            SendSynchronizeCacheCommand(message.Agent.InstanceId, message.State.Entity, currentVersion, correlationId);
+            SendSynchronizeCacheCommand(message.Agent.InstanceId, message.State.Entity, currentVersion.Version, correlationId);
         }
 
-        private string GetSyncEntityTableName()
+        private void LogMessage(AmqpSyncResponse message, string correlationId)
         {
-            TableAttribute tableAttribute = (TableAttribute)Attribute.GetCustomAttribute(typeof(SyncEntity), typeof(TableAttribute));
-            return tableAttribute.Name;
-        }
-
-        private object GetCurrentEntityVersion(DataSet entityMetadata, string fieldName)
-        {
-            return entityMetadata.Records.First().Value.Fields.Values.First(f => f.Name == fieldName).Value;
+            _logger.LogInformation($"CorrelationId: {correlationId}. " +
+                $"Received message from agent: {message.Agent.InstanceId}. " +
+                $"Added: {message.State.Added.Records.Count}, " +
+                $"Updated: {message.State.Updated.Records.Count}, " +
+                $"Deleted: {message.State.Deleted.Records.Count}.");
         }
 
         private void LogSyncStatus(string correlationId, int addedRecords = 0, int updatedRecords = 0, int deletedRecords = 0)

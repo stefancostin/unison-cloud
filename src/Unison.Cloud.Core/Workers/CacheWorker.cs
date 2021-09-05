@@ -12,6 +12,7 @@ using Unison.Cloud.Core.Data.Entities;
 using Unison.Cloud.Core.Exceptions;
 using Unison.Cloud.Core.Interfaces.Configuration;
 using Unison.Cloud.Core.Interfaces.Data;
+using Unison.Cloud.Core.Interfaces.Services;
 using Unison.Cloud.Core.Interfaces.Workers;
 using Unison.Cloud.Core.Models;
 using Unison.Cloud.Core.Services;
@@ -27,6 +28,7 @@ namespace Unison.Cloud.Core.Workers
         private readonly ConnectionsManager _connectionsManager;
         private readonly IAmqpPublisher _publisher;
         private readonly ISQLRepository _repository;
+        private readonly IVersioningService _versioningService;
         private readonly ServicesContext _servicesContext;
         private readonly ITimerConfiguration _timerConfig;
         private readonly ILogger<CacheWorker> _logger;
@@ -36,6 +38,7 @@ namespace Unison.Cloud.Core.Workers
             ConnectionsManager connectionsManager,
             IAmqpPublisher publisher,
             ISQLRepository repository,
+            IVersioningService versioningService,
             ServicesContext servicesContext,
             ITimerConfiguration timerConfig,
             ILogger<CacheWorker> logger)
@@ -44,6 +47,7 @@ namespace Unison.Cloud.Core.Workers
             _connectionsManager = connectionsManager;
             _publisher = publisher;
             _repository = repository;
+            _versioningService = versioningService;
             _servicesContext = servicesContext;
             _timerConfig = timerConfig;
             _logger = logger;
@@ -78,6 +82,11 @@ namespace Unison.Cloud.Core.Workers
 
             AmqpCache cacheMessage = MapEntitiesCacheToResponseModel(entitiesCache, correlationId);
             SendCache(cacheMessage, connectedInstance.InstanceId);
+        }
+
+        private long ExtractVersion(string entity, int agentId)
+        {
+            return _versioningService.GetVersion(entity, agentId)?.Version ?? Versioning.NewVersion;
         }
 
         private List<SyncEntity> GetEntitiesMetadata(int nodeId)
@@ -132,7 +141,7 @@ namespace Unison.Cloud.Core.Workers
                         .Build();
 
                     DataSet cache = _repository.Read(schema);
-                    cache.Version = entity.Version;
+                    cache.Version = ExtractVersion(entity.Entity, agentId);
                     cache.Records = MapAgentPrimaryKey(cache, entity.PrimaryKey);
 
                     entitiesCache.Add(cache);

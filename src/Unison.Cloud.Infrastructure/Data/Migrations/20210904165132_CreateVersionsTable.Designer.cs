@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Unison.Cloud.Infrastructure.Data;
 
 namespace Unison.Cloud.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210904165132_CreateVersionsTable")]
+    partial class CreateVersionsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -242,6 +244,9 @@ namespace Unison.Cloud.Infrastructure.Data.Migrations
                     b.Property<int>("EntityId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("SyncEntityId")
+                        .HasColumnType("int");
+
                     b.Property<long>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
@@ -249,10 +254,7 @@ namespace Unison.Cloud.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EntityId");
-
-                    b.HasIndex("AgentId", "EntityId")
-                        .IsUnique();
+                    b.HasIndex("SyncEntityId");
 
                     b.ToTable("SyncVersions");
                 });
@@ -292,21 +294,9 @@ namespace Unison.Cloud.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Unison.Cloud.Core.Data.Entities.SyncVersion", b =>
                 {
-                    b.HasOne("Unison.Cloud.Core.Data.Entities.SyncAgent", "Agent")
-                        .WithMany()
-                        .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Unison.Cloud.Core.Data.Entities.SyncEntity", "Entity")
+                    b.HasOne("Unison.Cloud.Core.Data.Entities.SyncEntity", null)
                         .WithMany("Versions")
-                        .HasForeignKey("EntityId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Agent");
-
-                    b.Navigation("Entity");
+                        .HasForeignKey("SyncEntityId");
                 });
 
             modelBuilder.Entity("Unison.Cloud.Core.Data.Entities.SyncEntity", b =>

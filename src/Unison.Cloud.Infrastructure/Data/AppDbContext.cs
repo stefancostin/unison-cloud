@@ -25,6 +25,7 @@ namespace Unison.Cloud.Infrastructure.Data
         public DbSet<SyncEntity> SyncEntities { get; set; }
         public DbSet<SyncLog> SyncLog { get; set; }
         public DbSet<SyncNode> SyncNodes { get; set; }
+        public DbSet<SyncVersion> SyncVersions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -60,9 +61,6 @@ namespace Unison.Cloud.Infrastructure.Data
                 .Property(p => p.NodeId)
                 .HasDefaultValue(1);
             modelBuilder.Entity<SyncEntity>()
-                .Property(p => p.Version)
-                .HasDefaultValue(1);
-            modelBuilder.Entity<SyncEntity>()
                 .Property(p => p.Fields)
                 .HasJsonValueConversion();
             modelBuilder.Entity<SyncEntity>()
@@ -71,6 +69,18 @@ namespace Unison.Cloud.Infrastructure.Data
             modelBuilder.Entity<SyncEntity>()
                 .Property(p => p.UpdatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SyncEntity>()
+                 .HasMany(e => e.Versions)
+                 .WithOne(v => v.Entity)
+                 .HasForeignKey(v => v.EntityId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SyncVersion>()
+                .Property(p => p.Version)
+                .HasDefaultValue(1);
+            modelBuilder.Entity<SyncVersion>()
+                 .HasIndex(nameof(SyncVersion.AgentId), nameof(SyncVersion.EntityId))
+                 .IsUnique();
 
             modelBuilder.Entity<SyncLog>()
                 .Property(p => p.AddedRecords)

@@ -28,6 +28,7 @@ namespace Unison.Cloud.Infrastructure
             services.AddScoped<ISyncEntityRepository, SyncEntityRepository>();
             services.AddScoped<ISyncLogRepository, SyncLogRepository>();
             services.AddScoped<ISyncNodeRepository, SyncNodeRepository>();
+            services.AddScoped<ISyncVersionRepository, SyncVersionRepository>();
             services.AddScoped<ISQLRepository, SQLRepository>();
         }
 

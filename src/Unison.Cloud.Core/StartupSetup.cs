@@ -32,6 +32,7 @@ namespace Unison.Cloud.Infrastructure
             services.AddSingleton<ServicesContext>();
             services.AddSingleton<ServiceTimers>();
             services.AddSingleton<ConnectionsManager>();
+            services.AddSingleton<IVersioningService, VersioningService>();
 
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<ITokenService, TokenService>();
