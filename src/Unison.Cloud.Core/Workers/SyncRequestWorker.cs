@@ -46,8 +46,6 @@ namespace Unison.Cloud.Core.Workers
                 return;
             }
 
-            List<SyncLog> syncLog = new List<SyncLog>();
-
             foreach (ConnectedInstance connectedInstance in _connectionsManager.ConnectedInstances.Values)
             {
                 List<SyncEntity> entities = GetEntitiesMetadata(connectedInstance.NodeId);
@@ -76,13 +74,12 @@ namespace Unison.Cloud.Core.Workers
                         CorrelationId = correlationId,
                         Entity = entity.Entity,
                     };
-                    syncLog.Add(initialSyncRequestLog);
+
+                    InitializeSyncLog(initialSyncRequestLog);
 
                     SendSyncRequest(syncRequest, connectedInstance.InstanceId);
                 }
             }
-
-            InitializeSyncLog(syncLog);
         }
 
         private List<SyncEntity> GetEntitiesMetadata(int nodeId)
@@ -94,7 +91,7 @@ namespace Unison.Cloud.Core.Workers
             }
         }
 
-        private void InitializeSyncLog(List<SyncLog> syncLog)
+        private void InitializeSyncLog(SyncLog syncLog)
         {
             using (var scope = _servicesContext.Services.CreateScope())
             {
